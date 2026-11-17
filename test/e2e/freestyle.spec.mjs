@@ -39,8 +39,9 @@ test("the host starts another app through its model", async ({ page }) => {
 });
 
 test("the embedded app stays inside its container", async ({ page }) => {
-  // sap.m.Shell centers itself on the viewport - Container.css keeps it in
-  // the control's area, which is narrower than the viewport here
+  // sap.m.Shell centers itself on the viewport - the style the bundle puts on
+  // the control's area keeps it in there, which is narrower than the viewport
+  // here
   for (const id of ["single", "left", "right"]) {
     const outer = await container(page, id).boundingBox();
     const inner = await container(page, id)
@@ -135,7 +136,6 @@ test("the frontend comes from the backend, in one request", async ({
 
   expect(requests.sort()).toEqual([
     "/sap/bc/z2ui5?z2ui5-bundle",
-    "/thirdparty/z2ui5/embed/Container.css",
     "/thirdparty/z2ui5/embed/Container.js",
   ]);
 });
@@ -575,9 +575,8 @@ test("an app whose host is deactivated while it starts still starts", async ({
 
 // A query or a fragment on the endpoint is refused as well - the bundle is
 // asked for with a query of its own, the roundtrips go to the path - and
-// the reason says which, instead of calling a path on this server another
-// host. Like every failure it arrives after the rendering that started
-// the app.
+// the reason names both. Like every failure it arrives after the rendering
+// that started the app.
 test("a query or a fragment on the endpoint is refused, and named", async ({
   page,
 }) => {
@@ -601,15 +600,15 @@ test("a query or a fragment on the endpoint is refused, and named", async ({
         }),
       endpoint,
     );
-    expect(reason).toContain("carries a query or a fragment");
+    expect(reason).toContain("without a query or a fragment");
   }
   await expect(postButtons(page)).toHaveCount(3);
 });
 
-// What a start is made of is the endpoint as it is requested and the params
-// as the backend gets them: the same endpoint in another spelling, or an
-// app_start in the params (the app wins over it anyway), is no change and
-// keeps the app and its state; another endpoint is a change.
+// What a start is made of is the endpoint as it is requested: the same
+// endpoint in another spelling is no change and keeps the app and its
+// state; another endpoint is a change. (The params are compared as the host
+// set them since 0.4.0 - what the backend makes of them is the bundle's.)
 test("the same endpoint spelled differently does not restart the app", async ({
   page,
 }) => {
@@ -642,7 +641,6 @@ test("the same endpoint spelled differently does not restart the app", async ({
     control.setEndpoint("/sap/bc/z2ui5/");
     control.setEndpoint("sap/bc/z2ui5");
     control.setEndpoint("");
-    control.setParams({ app_start: "Z2UI5_CL_UI5_APP_START" });
   });
   await page.waitForTimeout(3000);
   expect(await page.evaluate(() => window.spelling.created)).toBe(1);
@@ -764,10 +762,12 @@ test("an invisible control starts nothing until it is shown", async ({
   ).toHaveValue("Alice");
 });
 
-// The first control decides where the frontend comes from - but when that
-// load fails, a control with an endpoint of its own is not failed for a
-// backend it never talks to: it tries its own endpoint once.
-test("a frontend load that failed from another control's endpoint is tried from the control's own", async ({
+// The first control decides where the frontend comes from, and every
+// control that waits for that load shares its outcome: when it fails, they
+// all fail with it, and nothing is asked again by itself (0.4.0 - 0.3.0
+// tried a control's own endpoint once more). restart( ) asks again, from the
+// endpoint of the control that starts first.
+test("a failed frontend load fails every control that waited for it, and restart() asks again", async ({
   page,
   baseURL,
 }, testInfo) => {
@@ -833,7 +833,16 @@ test("a frontend load that failed from another control's endpoint is tried from 
   );
 
   expect(result.down).toContain("/sap/bc/z2ui5_down?z2ui5-bundle");
-  expect(result.ok).toBe("created");
+  expect(result.ok).toContain("/sap/bc/z2ui5_down?z2ui5-bundle");
+  expect(bundles).toEqual(["/sap/bc/z2ui5_down"]);
+
+  // the control with a working endpoint, restarted, loads from its own
+  await page.evaluate(() => {
+    const controls = [...document.querySelectorAll(".z2ui5EmbedContainer")]
+      .map((dom) => sap.ui.getCore().byId(dom.id))
+      .filter((c) => c && c.getEndpoint() === "/sap/bc/z2ui5");
+    controls.forEach((c) => c.restart());
+  });
   await expect(postButtons(page)).toHaveCount(1);
   expect(bundles).toEqual(["/sap/bc/z2ui5_down", "/sap/bc/z2ui5"]);
 });
