@@ -3,10 +3,11 @@
 // that keeps the scripts it is given, a loader that answers for z2ui5/embed.
 // No browser and no backend. What is pinned here is what the control decides
 // before either is involved - which endpoints it accepts and what URL it
-// requests, what it hands the component, when it starts, restarts and gives
-// up - case by case, in milliseconds; the examples' Playwright tests in
-// test/e2e/ run the control in a browser against a live abap2UI5 for the
-// rest.
+// requests, what it hands the bundle's create( ), when it starts, restarts
+// and gives up - case by case, in milliseconds. How the app is made of that
+// (its component, its component data) is the bundle's and tested in
+// abap2UI5; the examples' Playwright tests in test/e2e/ run the control in a
+// browser against a live abap2UI5 for the rest.
 //
 //   npm test
 
@@ -24,26 +25,43 @@ const SOURCE = join(
 );
 const PAGE = "https://host.example/app/index.html";
 const APP = "ZCL_MY_APP";
-// what the bundle's z2ui5/embed module hands over
-const EMBED = {
-  componentData: {
-    embedded: true,
-    nodePath: "/sap/bc/z2ui5",
-    ccResourceRoot: "/sap/bc/ui5_ui5/sap/z2ui5_cci",
-  },
-};
-
 // Loads the control into a fresh page. `page` records what the control does
-// to it: the <script> elements in its head (`scripts`), the components asked
-// for (`created`), what was logged (`logged`); `page.embed` is what the
-// loader answers for z2ui5/embed - null until "the bundle has run".
+// to it: the <script> elements in its head (`scripts`), what create( ) was
+// asked for (`created`) and what it handed back (`apps`), what was logged
+// (`logged`); `page.embed` is what the loader answers for z2ui5/embed - null
+// until "the bundle has run" (bundleArrives, or page.embed = page.bundle).
 function load({ href = PAGE, hostGlobal } = {}) {
   const page = {
     scripts: [],
     created: [],
-    components: [],
+    apps: [],
     logged: [],
     embed: null,
+  };
+  // the bundle's z2ui5/embed module: create( ) hands back the app as a
+  // control for the host to render - a ComponentContainer in abap2UI5
+  page.bundle = {
+    create(settings) {
+      page.created.push(settings);
+      const app = {
+        settings,
+        component: { of: settings },
+        destroyed: false,
+        destroy() {
+          this.destroyed = true;
+        },
+        getComponentInstance() {
+          return this.component;
+        },
+      };
+      page.apps.push(app);
+      if (page.failCreate) return Promise.reject(new Error(page.failCreate));
+      if (!page.holdCreate) return Promise.resolve(app);
+      // the test releases the app itself (page.release)
+      return new Promise((resolve) => {
+        page.release = () => resolve(app);
+      });
+    },
   };
   const document = {
     head: { appendChild: (script) => page.scripts.push(script) },
@@ -89,29 +107,6 @@ function load({ href = PAGE, hostGlobal } = {}) {
         return Container;
       },
     },
-    "sap/ui/core/Component": {
-      getOwnerComponentFor: () => null,
-      create(options) {
-        page.created.push(options);
-        const component = {
-          options,
-          destroyed: false,
-          destroy() {
-            this.destroyed = true;
-          },
-        };
-        page.components.push(component);
-        if (!page.holdCreate) return Promise.resolve(component);
-        // the test releases the component itself (page.release)
-        return new Promise((resolve) => {
-          page.release = () => resolve(component);
-        });
-      },
-    },
-    "sap/ui/core/ComponentContainer": function ComponentContainer(settings) {
-      this.settings = settings;
-    },
-    "sap/ui/dom/includeStylesheet": () => {},
     "sap/base/Log": { error: (...args) => page.logged.push(args) },
   };
   const Container = factory(
@@ -130,8 +125,8 @@ function control(Container, settings = {}) {
     app: "",
     endpoint: "",
     params: null,
-    ownsHash: false,
     ownsPage: false,
+    bundleVersion: "",
     width: "100%",
     height: "100%",
     visible: true,
@@ -157,8 +152,8 @@ function control(Container, settings = {}) {
     getApp: () => props.app,
     getEndpoint: () => props.endpoint,
     getParams: () => props.params,
-    getOwnsHash: () => props.ownsHash,
     getOwnsPage: () => props.ownsPage,
+    getBundleVersion: () => props.bundleVersion,
     getVisible: () => props.visible,
     getWidth: () => props.width,
     getHeight: () => props.height,
@@ -201,13 +196,13 @@ const failure = (c) => {
   const failed = c.events.find(([name]) => name === "componentFailed");
   return failed ? failed[1].reason.message : null;
 };
-const container = (c) => c.aggregations._container;
+const app = (c) => c.aggregations._app;
 // an object made in the control's page has that page's Object.prototype -
 // compared as data, not by its prototype
 const plain = (value) => JSON.parse(JSON.stringify(value));
 
 // the bundle arrives: the script runs and defines z2ui5/embed
-async function bundleArrives(page, embed = EMBED) {
+async function bundleArrives(page, embed = page.bundle) {
   page.embed = embed;
   page.scripts.at(-1).onload();
   await settle();
@@ -247,7 +242,7 @@ test("an endpoint on this server is requested as the URL the browser resolves it
     await render(c);
     assert.deepEqual(requested(page), [`${url}?z2ui5-bundle`], endpoint);
     await bundleArrives(page);
-    assert.equal(page.created[0].componentData.endpoint, url, endpoint);
+    assert.equal(page.created[0].endpoint, url, endpoint);
   }
 });
 
@@ -295,7 +290,7 @@ test("an endpoint that is no path on this server loads nothing and fails the sta
   }
 });
 
-test("a query or a fragment is refused with its own reason", async () => {
+test("a query or a fragment is refused as well", async () => {
   for (const endpoint of [
     "/sap/bc/z2ui5?sap-client=100",
     "/sap/bc/z2ui5#/app/ZCL_OTHER",
@@ -305,7 +300,7 @@ test("a query or a fragment is refused with its own reason", async () => {
     const c = control(Container, { app: APP, endpoint });
     await render(c);
     assert.deepEqual(requested(page), [], endpoint);
-    assert.match(failure(c), /carries a query or a fragment/, endpoint);
+    assert.match(failure(c), /without a query or a fragment/, endpoint);
   }
 });
 
@@ -347,7 +342,20 @@ test("nothing starts for an empty app or an invisible control", async () => {
   assert.equal(requested(page).length, 1);
 });
 
-test("one start is the class, the endpoint as requested and the params as the backend gets them", () => {
+// the page is the app's: its URL names the class (?app_start=, or a route in
+// the hash), which the backend reads from the roundtrip - so the control
+// starts without one and hands none over
+test("a control that owns the page starts without an app", async () => {
+  const { Container, page } = load();
+  page.embed = page.bundle;
+  const c = control(Container, { ownsPage: true });
+  await render(c);
+  assert.deepEqual(events(c), ["componentCreated"]);
+  assert.equal(page.created[0].app, "");
+  assert.equal(page.created[0].ownsPage, true);
+});
+
+test("one start is the class, the endpoint as requested, the params and ownsPage", () => {
   const { Container } = load();
   const key = (settings) =>
     control(Container, { app: APP, ...settings })._startKey();
@@ -360,149 +368,87 @@ test("one start is the class, the endpoint as requested and the params as the ba
   ]) {
     assert.equal(key({ endpoint, params: { a: "1" } }), base, endpoint);
   }
-  for (const params of [
-    { a: ["1"] },
-    { a: "1", app_start: "ZCL_OTHER" },
-    { a: "1", b: null, c: undefined },
-    { a: 1 },
-  ]) {
-    assert.equal(key({ endpoint: "", params }), base, JSON.stringify(params));
-  }
-  assert.equal(
-    key({ endpoint: "", params: { b: "2", a: "1" } }),
-    key({ endpoint: "", params: { a: "1", b: "2" } }),
-  );
+  // the same parameters in another object - what a binding hands over
+  // whenever its model says it changed
+  assert.equal(key({ endpoint: "", params: { a: "1" } }), base);
   assert.notEqual(key({ endpoint: "/sap/bc/z2ui5_other" }), base);
   assert.notEqual(key({ endpoint: "", params: { a: "2" } }), base);
   assert.notEqual(key({ endpoint: "", params: { a: ["1", "1"] } }), base);
   assert.notEqual(key({ app: "ZCL_OTHER", params: { a: "1" } }), base);
   assert.notEqual(
-    key({ endpoint: "", params: { a: "1" }, ownsHash: true }),
-    base,
-  );
-  assert.notEqual(
     key({ endpoint: "", params: { a: "1" }, ownsPage: true }),
     base,
   );
+  // names what is loaded, not what is started
+  assert.equal(
+    key({ endpoint: "", params: { a: "1" }, bundleVersion: "0123abcd" }),
+    base,
+  );
 });
 
-// ownsHash: the host's page is this control and nothing else, and the app
-// gets the URL hash (abap2UI5 Component.init, componentData.ownsHash) - a
-// top-level setting next to the endpoint, only when set; a change is a new
-// start, the hash belongs to a component from its creation on
-test("ownsHash hands the hash to the app, only when set, and a change starts anew", async () => {
+// What the bundle gets is what the host set, as it set it - and nothing
+// else. Which component that makes, with which data, is decided there.
+test("create( ) gets the class, the resolved endpoint, the params, ownsPage and the control", async () => {
   const { Container, page } = load();
-  const c = control(Container, { app: APP, ownsHash: true });
-  await render(c);
-  await bundleArrives(page);
-  assert.equal(page.created[0].componentData.ownsHash, true);
-  assert.deepEqual(plain(page.created[0].componentData.startupParameters), {
-    app_start: [APP],
-  });
-
-  c.setOwnsHash(false);
-  assert.equal(container(c), undefined);
-  await render(c);
-  assert.equal(page.created.length, 2);
-  assert.equal("ownsHash" in page.created[1].componentData, false);
-});
-
-// ownsPage: the host's page is this control and nothing else, and the app
-// gets all of it - the hash, the title, the favicon, the busy indicator, the
-// leave-page prompt (abap2UI5 Component.init, componentData.ownsPage). The
-// control passes ownsHash with it, which a 1.147.0 backend reads; a change
-// is a new start, like one of ownsHash
-test("ownsPage hands the page to the app, with ownsHash, only when set, and a change starts anew", async () => {
-  const { Container, page } = load();
-  const c = control(Container, { app: APP, ownsPage: true });
-  await render(c);
-  await bundleArrives(page);
-  assert.equal(page.created[0].componentData.ownsPage, true);
-  assert.equal(page.created[0].componentData.ownsHash, true);
-
-  c.setOwnsPage(false);
-  assert.equal(container(c), undefined);
-  await render(c);
-  assert.equal(page.created.length, 2);
-  assert.equal("ownsPage" in page.created[1].componentData, false);
-  assert.equal("ownsHash" in page.created[1].componentData, false);
-});
-
-test("the component gets the bundle's data, the params in the launchpad's shape and the endpoint", async () => {
-  const { Container, page } = load();
+  const params = { country: "DE", tags: ["a", "b"] };
   const c = control(Container, {
     app: APP,
     endpoint: "/sap/bc/z2ui5/",
-    params: {
-      customer: "4711",
-      ids: ["1", 2],
-      none: null,
-      gone: undefined,
-      flag: false,
-      deep: { a: 1 },
-      list: [["x"]],
-      app_start: "ZCL_OTHER",
-      empty: "",
-    },
+    params,
   });
   await render(c);
   await bundleArrives(page);
-  assert.deepEqual(plain(page.created), [
-    {
-      name: "z2ui5",
-      manifest: true,
-      handleValidation: true,
-      componentData: {
-        embedded: true,
-        nodePath: "/sap/bc/z2ui5",
-        ccResourceRoot: "/sap/bc/ui5_ui5/sap/z2ui5_cci",
-        startupParameters: {
-          app_start: [APP],
-          customer: ["4711"],
-          deep: ['{"a":1}'],
-          empty: [""],
-          flag: ["false"],
-          ids: ["1", "2"],
-          list: ['["x"]'],
-        },
-        endpoint: "https://host.example/sap/bc/z2ui5",
-      },
-    },
+  assert.equal(page.created.length, 1);
+  const settings = page.created[0];
+  assert.deepEqual(Object.keys(settings).sort(), [
+    "app",
+    "endpoint",
+    "host",
+    "ownsPage",
+    "params",
   ]);
+  assert.equal(settings.app, APP);
+  assert.equal(settings.endpoint, "https://host.example/sap/bc/z2ui5");
+  assert.equal(settings.params, params);
+  assert.equal(settings.ownsPage, false);
+  assert.equal(settings.host, c);
+  // what came back is rendered, and its component is the event's
+  assert.equal(app(c), page.apps[0]);
   assert.deepEqual(events(c), ["componentCreated"]);
-  assert.equal(c.events[0][1].component.options, page.created[0]);
-  const settings = container(c).settings;
-  assert.equal(settings.component, c.events[0][1].component);
-  assert.deepEqual(plain({ ...settings, component: null }), {
-    lifecycle: "Container",
-    propagateModel: false,
-    width: "100%",
-    height: "100%",
-    component: null,
-  });
+  assert.equal(c.events[0][1].component, page.apps[0].component);
 });
 
-// A bundle that registers the component under a second name too (abap2UI5
-// 1.147.0) names it - the control creates the frontend under it, so a page
-// whose own component is z2ui5 (abap2UI5's embed app) works; an older
-// bundle names none, and the frontend runs as z2ui5
-test("the component is created under the bundle's second name, else as z2ui5", async () => {
+test("ownsPage is handed over only when set, and a change starts anew", async () => {
   const { Container, page } = load();
+  page.embed = page.bundle;
+  const c = control(Container, { app: APP, ownsPage: true });
+  await render(c);
+  assert.equal(page.created[0].ownsPage, true);
+  c.setOwnsPage(false);
+  assert.equal(app(c), undefined);
+  await render(c);
+  assert.equal(page.created.length, 2);
+  assert.equal(page.created[1].ownsPage, false);
+});
+
+test("a create( ) that fails is the start's failure", async () => {
+  const { Container, page } = load();
+  page.embed = page.bundle;
+  page.failCreate = "no manifest";
   const c = control(Container, { app: APP });
   await render(c);
-  await bundleArrives(page, {
-    ...EMBED,
-    componentName: "z2ui5.embed.frontend",
-  });
-  assert.equal(page.created[0].name, "z2ui5.embed.frontend");
-  // the name is no component data
-  assert.equal("componentName" in page.created[0].componentData, false);
+  assert.deepEqual(events(c), ["componentFailed"]);
+  assert.equal(failure(c), "no manifest");
+  assert.equal(app(c), undefined);
+});
 
-  const old = load();
-  const d = control(old.Container, { app: APP });
-  await render(d);
-  await bundleArrives(old.page);
-  assert.equal(old.page.created[0].name, "z2ui5");
+test("the bundle is asked for by its version when the host names one", async () => {
+  const { Container, page } = load();
+  const c = control(Container, { app: APP, bundleVersion: "0123abcd/ef" });
+  await render(c);
+  assert.deepEqual(requested(page), [
+    "https://host.example/sap/bc/z2ui5?z2ui5-bundle=0123abcd%2Fef",
+  ]);
 });
 
 test("the bundle is loaded once, from the first control's endpoint, and shared", async () => {
@@ -522,7 +468,7 @@ test("the bundle is loaded once, from the first control's endpoint, and shared",
   assert.deepEqual(events(second), ["componentCreated"]);
   // each sends its roundtrips to its own endpoint
   assert.deepEqual(
-    page.created.map((options) => options.componentData.endpoint),
+    page.created.map((settings) => settings.endpoint),
     [
       "https://host.example/sap/bc/z2ui5",
       "https://host.example/sap/bc/z2ui5_other",
@@ -537,15 +483,14 @@ test("the bundle is loaded once, from the first control's endpoint, and shared",
 
 test("a bundle the host loaded itself is not loaded again", async () => {
   const { Container, page } = load();
-  page.embed = EMBED;
+  page.embed = page.bundle;
   const c = control(Container, { app: APP });
   await render(c);
   assert.deepEqual(requested(page), []);
   assert.deepEqual(events(c), ["componentCreated"]);
-  assert.equal(page.created[0].componentData.nodePath, "/sap/bc/z2ui5");
 });
 
-test("a page or a script that defines no z2ui5/embed is no frontend", async () => {
+test("a page or a script that defines no z2ui5/embed with create( ) is no frontend", async () => {
   const { Container, page } = load();
   const c = control(Container, { app: APP });
   await render(c);
@@ -560,9 +505,20 @@ test("a page or a script that defines no z2ui5/embed is no frontend", async () =
   );
   // ... and the failed script is gone
   assert.equal(page.scripts.includes(script), false);
+
+  // an abap2UI5 up to 1.149.0: its bundle defines the module, without
+  // create( ) - not a frontend this control can start, and no fallback
+  const old = load();
+  const o = control(old.Container, { app: APP });
+  await render(o);
+  await bundleArrives(old.page, {
+    componentData: { nodePath: "/sap/bc/z2ui5" },
+  });
+  assert.deepEqual(events(o), ["componentFailed"]);
+  assert.match(failure(o), /no abap2UI5 frontend at/);
 });
 
-test("a failed load is forgotten; a control that shared another's failed load tries its own once", async () => {
+test("a failed load fails every control that shared it, and is forgotten", async () => {
   const { Container, page } = load();
   const first = control(Container, { app: APP });
   const second = control(Container, {
@@ -575,119 +531,94 @@ test("a failed load is forgotten; a control that shared another's failed load tr
   page.scripts[0].onerror();
   await settle();
   assert.deepEqual(events(first), ["componentFailed"]);
+  assert.deepEqual(events(second), ["componentFailed"]);
   assert.match(
-    failure(first),
+    failure(second),
     /no abap2UI5 frontend at https:\/\/host.example\/sap\/bc\/z2ui5\?z2ui5-bundle/,
   );
-  // the second control asks its own endpoint - the first load is gone
+  // no second request of the control's own, and none by a rendering
+  assert.deepEqual(requested(page), []);
+  await render(first);
+  await render(second);
+  assert.deepEqual(requested(page), []);
+  // restart( ) asks the backend again - from the endpoint of whoever is first
+  second.restart();
+  await render(second);
   assert.deepEqual(requested(page), [
     "https://host.example/sap/bc/z2ui5_other?z2ui5-bundle",
   ]);
-  assert.deepEqual(events(second), []);
-  // which fails too: tried once, no third request
-  page.scripts[0].onerror();
-  await settle();
-  assert.deepEqual(events(second), ["componentFailed"]);
-  assert.match(failure(second), /z2ui5_other\?z2ui5-bundle/);
-  assert.deepEqual(requested(page), []);
-  // a rendering repeats neither start; restart( ) asks the backend again
-  await render(first);
-  await render(second);
-  assert.deepEqual(requested(page), []);
+  await bundleArrives(page);
+  assert.deepEqual(events(second), ["componentFailed", "componentCreated"]);
+  // and the first control, restarted, takes the frontend that is there now
   first.restart();
   await render(first);
-  assert.deepEqual(requested(page), [
-    "https://host.example/sap/bc/z2ui5?z2ui5-bundle",
-  ]);
-  await bundleArrives(page);
-  assert.deepEqual(events(first), ["componentFailed", "componentCreated"]);
-  // and the second control, restarted, takes the frontend that is there now
-  second.restart();
-  await render(second);
   assert.equal(requested(page).length, 1);
-  assert.deepEqual(events(second), ["componentFailed", "componentCreated"]);
+  assert.deepEqual(events(first), ["componentFailed", "componentCreated"]);
 });
 
-test("a change of app, endpoint or params replaces the component - and what a start under way still creates is destroyed", async () => {
+test("a change of app, endpoint or params replaces the app - and what a start under way still creates is destroyed", async () => {
   const { Container, page } = load();
   const c = control(Container, { app: APP, params: { a: "1" } });
   await render(c);
   await bundleArrives(page);
-  const first = c.events[0][1].component;
-  assert.equal(container(c).settings.component, first);
+  const first = app(c);
+  assert.equal(first, page.apps[0]);
 
   // the same params in another object: no restart
   c.setParams({ a: "1" });
-  assert.equal(container(c).settings.component, first);
+  assert.equal(app(c), first);
   assert.equal(c.invalidated, 0);
 
-  // other params: the component goes, the next rendering starts anew
+  // other params: the app goes, the next rendering starts anew
   c.setParams({ a: "2" });
-  assert.equal(container(c), undefined);
+  assert.equal(first.destroyed, true);
+  assert.equal(app(c), undefined);
   assert.equal(c.invalidated, 1);
   await render(c);
   assert.equal(requested(page).length, 1);
   assert.deepEqual(events(c), ["componentCreated", "componentCreated"]);
-  assert.deepEqual(plain(page.created[1].componentData.startupParameters), {
-    a: ["2"],
-    app_start: [APP],
-  });
+  assert.deepEqual(plain(page.created[1].params), { a: "2" });
 
-  // the params object changed in place and handed over again
-  const params = { a: "3" };
-  c.setParams(params);
-  await render(c);
-  params.a = "4";
-  c.setParams(params);
-  await render(c);
-  assert.deepEqual(plain(page.created.at(-1).componentData.startupParameters), {
-    a: ["4"],
-    app_start: [APP],
-  });
-
-  // a change while the component is still being created
+  // a change while the app is still being created
   page.holdCreate = true;
   c.setApp("ZCL_OTHER");
   await render(c);
-  assert.equal(
-    page.created.at(-1).componentData.startupParameters.app_start[0],
-    "ZCL_OTHER",
-  );
+  assert.equal(page.created.at(-1).app, "ZCL_OTHER");
   const created = c.events.length;
   c.setEndpoint("/sap/bc/z2ui5_other");
   page.release();
   await settle();
   // destroyed, handed to nobody
   assert.equal(c.events.length, created);
-  assert.equal(page.components.at(-1).destroyed, true);
+  assert.equal(page.apps.at(-1).destroyed, true);
   await render(c);
   page.release();
   await settle();
   assert.equal(c.events.length, created + 1);
   assert.equal(
-    page.created.at(-1).componentData.endpoint,
+    page.created.at(-1).endpoint,
     "https://host.example/sap/bc/z2ui5_other",
   );
 });
 
-test("restart( ) ends the running component and starts anew with the same values", async () => {
+test("restart( ) ends the running app and starts anew with the same values", async () => {
   const { Container, page } = load();
   const c = control(Container, { app: APP });
   await render(c);
   await bundleArrives(page);
-  const first = container(c);
+  const first = app(c);
   c.restart();
   assert.equal(first.destroyed, true);
-  assert.equal(container(c), undefined);
+  assert.equal(app(c), undefined);
   await render(c);
   assert.equal(requested(page).length, 1);
   assert.deepEqual(events(c), ["componentCreated", "componentCreated"]);
-  assert.notEqual(container(c), first);
+  assert.notEqual(app(c), first);
 });
 
-test("a component that arrives after the control's end is destroyed", async () => {
+test("an app that arrives after the control's end is destroyed", async () => {
   const { Container, page } = load();
-  page.embed = EMBED;
+  page.embed = page.bundle;
   page.holdCreate = true;
   const c = control(Container, { app: APP });
   await render(c);
@@ -695,8 +626,8 @@ test("a component that arrives after the control's end is destroyed", async () =
   page.release();
   await settle();
   assert.deepEqual(events(c), []);
-  assert.equal(page.components.length, 1);
-  assert.equal(page.components[0].destroyed, true);
+  assert.equal(page.apps.length, 1);
+  assert.equal(page.apps[0].destroyed, true);
 });
 
 test("width and height go to the DOM, without a rendering", () => {
@@ -718,7 +649,7 @@ test("width and height go to the DOM, without a rendering", () => {
 
 test("a handler of componentCreated that throws is logged, not left as an unhandled rejection", async () => {
   const { Container, page } = load();
-  page.embed = EMBED;
+  page.embed = page.bundle;
   const c = control(Container, { app: APP });
   c.fireComponentCreated = () => {
     throw new Error("host bug");

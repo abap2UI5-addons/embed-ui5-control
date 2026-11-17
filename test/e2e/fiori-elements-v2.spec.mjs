@@ -163,7 +163,6 @@ test("the frontend comes from the backend, the control from the app", async ({
 
   expect(requests.sort()).toEqual([
     "/sap/bc/z2ui5?z2ui5-bundle",
-    "/thirdparty/z2ui5/embed/Container.css",
     "/thirdparty/z2ui5/embed/Container.js",
   ]);
 });

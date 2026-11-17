@@ -27,7 +27,7 @@ const WORKSPACE = "packages/embed-control";
 const NAME = "@abap2ui5/embed-control";
 // where includeDependency puts the control: thirdparty/, not resources/
 const TARGET = "dist/thirdparty/z2ui5/embed";
-const FILES = ["Container.js", "Container.css"];
+const FILES = ["Container.js"];
 
 const majors = process.argv.length > 2 ? process.argv.slice(2) : ["3", "4"];
 

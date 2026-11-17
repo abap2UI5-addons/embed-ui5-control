@@ -6,6 +6,28 @@ own, and nothing may be left under "Unreleased".
 
 ## Unreleased
 
+## 0.4.0
+
+- **The control is a shell, and needs the abap2UI5 release after 1.149.0.**
+  It loads the bundle and renders what the bundle's `z2ui5/embed` module
+  creates (`create( )`); the component, its component data and the style
+  of the area come from the backend. There is no fallback for an older
+  abap2UI5 - 0.3.0 stays the version for 1.145.0 to 1.149.0, and keeps
+  working against newer backends.
+- `bundleVersion` (string): the bundle is asked for by its version, and the
+  browser may keep it without asking again. For a host that knows the
+  version of the frontend - abap2UI5's own page does.
+- No stylesheet any more: `src/Container.css` is gone, the area's position
+  and overflow are set by the renderer, the one rule for `sap.m.Shell`
+  comes with the bundle. A host no longer serves or requests a file for it.
+- Removed: `ownsHash`, the older name of `ownsPage`; the second load from
+  a control's own endpoint after another control's load failed. The hidden
+  aggregation is `_app` (was `_container`).
+- A control that owns the page (`ownsPage`) starts without `app` and hands
+  no `app_start` over: the page's URL names the class then (`?app_start=`,
+  or a route in the hash), which the backend reads from the roundtrip, and
+  without one the backend starts its start page. Without `ownsPage` nothing
+  starts while `app` is empty, as before.
 - Docs: the examples moved from abap2UI5/samples-embed-control into this
   package's repository (`examples/`, and its branches `standard` and
   `rap`); the README links them there. Nothing in the control changes.

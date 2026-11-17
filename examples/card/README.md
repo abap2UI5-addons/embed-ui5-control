@@ -60,9 +60,8 @@ over the whole page; a card app keeps it down on its own events with
 ## Run it
 
 It needs an abap2UI5 backend that answers `?z2ui5-bundle` and leaves the URL
-hash to the page it is embedded in - **abap2UI5 1.146.0 or later**. 1.145.0
-answers the bundle but clears the page's
-hash with the card's first roundtrip, and SAP Build Work Zone routes by it.
+hash to the page it is embedded in - **abap2UI5 1.150.0 or later**, the
+first release whose frontend creates the app for this control.
 Both commands open the preview `test/index.html`.
 
 **Against an SAP system** - `npm start`: set the system's URL as `baseUri`
@@ -77,7 +76,7 @@ npm start                        # the preview, /sap/** proxied to the system in
 transpiled to JavaScript and run in Node, on `http://localhost:3000`. The npm
 package
 [`@abap2ui5/node-runtime`](https://www.npmjs.com/package/@abap2ui5/node-runtime)
-is exactly that, prebuilt - 1.146.0 or later, in a folder of its own, with
+is exactly that, prebuilt - 1.150.0 or later, in a folder of its own, with
 Node 22 or later:
 
 ```bash
@@ -95,7 +94,7 @@ the control in `dist/thirdparty/z2ui5/embed/` - without the preview.
 
 ## Put it into SAP Build Work Zone
 
-1. **The system:** abap2UI5 - 1.146.0 or later, see above -
+1. **The system:** abap2UI5 - 1.150.0 or later, see above -
    with its HTTP service `/sap/bc/z2ui5` active.
 2. **A destination** in the BTP subaccount to that system - for an on-premise
    system through the Cloud Connector, for example with principal

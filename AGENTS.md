@@ -26,7 +26,7 @@ The abap2UI5 frontend - the `z2ui5` UI5 component the control wraps - is
 time from the abap2UI5 service it talks to
 (`GET <endpoint>?z2ui5-bundle`, answered by `z2ui5_cl_ui5_http_handler` from
 the generated `z2ui5_cl_ui5f_preload`; its only source is
-[abap2UI5 `app/webapp`](https://github.com/abap2UI5/abap2UI5/tree/main/app/webapp)).
+[abap2UI5 `bundle/webapp`](https://github.com/abap2UI5/abap2UI5/tree/main/bundle/webapp)).
 
 - Never vendor, copy or pin the frontend here, and add nothing to the package
   that has to follow abap2UI5's releases.
@@ -42,7 +42,7 @@ the generated `z2ui5_cl_ui5f_preload`; its only source is
 
 | Path | |
 |---|---|
-| `packages/embed-control/src/` | The control (`Container.js`) and its stylesheet |
+| `packages/embed-control/src/` | The control (`Container.js`) - nothing else since 0.4.0 |
 | `packages/embed-control/ui5.yaml` | UI5 CLI project of type `module`: `/thirdparty/z2ui5/embed/` → `src/` |
 | `packages/embed-control/README.md` | The consumer documentation - what npm shows |
 | `packages/embed-control/CHANGELOG.md` | Every release; the publish checks it |
@@ -88,7 +88,7 @@ range covers its version.
   start happens, is repeated or given up - goes into
   `test/container.test.mjs`, which needs no browser.
 - **The floor leg of `ci.yaml` names the Playwright projects** of
-  `playwright.config.mjs` and the tag `@after-1.145.0`; a renamed project is
+  `playwright.config.mjs` and the tag `@after-<floor>`; a renamed project is
   renamed there in the same breath.
 - **Nor the abap2UI5 frontend.** The control loads it at run time from the
   abap2UI5 service it talks to (`?z2ui5-bundle`); nothing here pins it, and
@@ -99,19 +99,22 @@ range covers its version.
 - **UI5 1.71 is the floor**, as in abap2UI5. Use no module, class, property or
   enum newer than 1.71, and no `sap/ui/core/Lib` / `sap/ui/core/Element`
   static APIs. What the control uses today and since when:
-  `sap/ui/dom/includeStylesheet` (1.58), `sap/base/Log` (1.58),
-  `Component.create` (1.56), `ComponentContainer#lifecycle` (1.56), renderer
-  `apiVersion: 2` (1.67).
+  `sap/ui/core/Control` and `sap/base/Log` (1.58), renderer `apiVersion: 2`
+  (1.67). Everything else - the component, its container - is the bundle's,
+  which is held to 1.71 in abap2UI5.
   The e2e tests run the freestyle example on 1.71 too
   (`examples/freestyle/ui5-1.71.yaml`, the `ui5-1.71` Playwright project) -
   a change to `src/` is done when every project of the `e2e` job passes, the
   `fiori-elements` and `fiori-elements-v2` ones included.
-- **Keep the control thin.** It picks the class, the endpoint and the size;
-  everything the app does comes from the backend through the component. It
-  configures the component only through what the frontend reads itself -
-  `componentData` (abap2UI5 `Component.init`), filled from the bundle's
-  `z2ui5/embed` module plus `startupParameters` and `endpoint` - never by
-  patching the manifest or reaching into the component's state.
+- **The control is a shell (0.4.0).** It decides where the bundle may come
+  from, loads it, and when an app starts and ends - nothing else. How the app
+  is made - its component, its component data, its styles - is the bundle's
+  `create( )` (the `z2ui5/embed` module, abap2UI5 `bundle/webapp/core/Embed.js`),
+  which gets `{ app, endpoint, params, ownsPage, host }` as the host set them
+  and hands back a control to render. Never decide something here that the
+  bundle can: it always fits the backend it came from, this package does not.
+  No fallback for a bundle without `create( )` - that is an abap2UI5 older
+  than the backend floor, and the start fails.
 - **The bundle is code - load it only from a path on this server.** Keep the
   `sameOriginUrl` check: the `endpoint` is parsed the way the browser parses
   it (`new URL(endpoint, location.href)`), refused before anything is
@@ -124,14 +127,14 @@ range covers its version.
   `/.//host` comes out on the page's origin with the path `//host`, another
   host wherever that path is used on its own. Load it with a
   `<script src>`, never with `eval`, `new Function` or `fetch` + inject.
-- **One frontend per page, one component per control, one backend session per
-  component.** The bundle is loaded once; a change of `app`, `endpoint` or
-  `params` replaces the component, and so does `restart()`; nothing is
-  patched into a running one. A start is compared by what the backend gets
-  - the resolved endpoint, the params as `startupParameters` makes them -
-  never by the raw property values. A control that shared a load from
-  another control's endpoint and saw it fail tries its own once; a failed
-  start is never repeated by the control itself.
+- **One frontend per page, one app per control, one backend session per
+  app.** The bundle is loaded once, from the endpoint of the first control
+  that starts; a load that fails fails every control that waited for it, and
+  is forgotten - the next start asks again. A change of `app`, `endpoint`,
+  `params` or `ownsPage` replaces the app, and so does `restart()`; nothing
+  is patched into a running one. A start is compared by the resolved
+  endpoint and the other values as the host set them. A failed start is
+  never repeated by the control itself.
 - **`width` and `height` go to the live DOM, not through a rendering**
   (`_setSizeProperty`): a re-rendering of the control re-renders the
   ComponentContainer and with it every control of the app, and UI5 1.71
@@ -149,55 +152,46 @@ range covers its version.
   served and built under `thirdparty/z2ui5/embed/` and registered with a
   relative resourceRoot. Keep `ui5.yaml`, the consumer README and the
   examples' manifests in step.
-- **The component name comes from the bundle.** `z2ui5/embed` names a
-  second name for the frontend (`componentName`, `z2ui5.embed.frontend` -
-  abap2UI5 registers its `Component.js` and `manifest.json` under
-  `z2ui5/embed/frontend/` too), and the control creates the component under
-  it whenever it is there - a host whose own component is `z2ui5`
-  (abap2UI5's embed app, `frontend/embed` there) has that name taken. Without it, `z2ui5`.
 - **`z2ui5/embed` is the backend's module, `z2ui5/embed/` this package's
   namespace.** The bundle defines the module; the control's own modules live
-  below it. Never add a module named `z2ui5/embed` here, and a folder
-  `app/webapp/embed/` in abap2UI5 would collide with this namespace.
-- **No inline styles for descendants and no `eval`**: a host with a strict
-  Content-Security-Policy must need nothing extra. Styles go into
-  `Container.css`, scoped under `.z2ui5EmbedContainer`.
+  below it. Never add a module named `z2ui5/embed` here.
+- **No stylesheet and no `eval`**: a host with a strict
+  Content-Security-Policy must need nothing extra. The renderer sets the
+  area's own `position` and `overflow`; a rule for what renders inside it
+  comes with the bundle (it was `Container.css` up to 0.3.0), scoped under a
+  class the bundle sets.
 - A UI5 module id is case-sensitive and a wrong one only fails in the browser
-  (`includeStylesheet`, not `includeStyleSheet`) - run the e2e tests.
+  - run the e2e tests.
 
 ## Rules for the package
 
 - **The package's `ui5.yaml` stays at specVersion 3.0.** The consumer's UI5
   CLI reads it, and UI5 CLI 3 refuses a dependency with 4.0.
   `npm run consumer:check` builds the packed package with CLI 3 and 4.
-- **abap2UI5 1.145.0 is the backend floor** - the first release that answers
-  `?z2ui5-bundle`. The package records it in its `package.json`
-  (`"abap2ui5": { "minBackend": "1.145.0" }`, the custom-field style
-  `@abap2ui5/node-runtime` uses), the package README names it in prose,
-  with what 1.145.0 does not do yet, and the e2e job of `ci.yaml` runs
-  the examples against it (the published `@abap2ui5/node-runtime` of that
-  version, read from the field by the job `floor`) next to abap2UI5 main;
-  raise it in package.json and the READMEs - the package's and the
-  examples' - when the control starts to rely on something newer. A test that needs a newer backend is tagged
-  `@after-<floor>` (`@after-1.145.0` today), which the floor leg leaves
-  out, as it leaves out the Fiori elements examples, which need the hash. The
-  package has no `engines`: it is a browser control without Node code, and a
-  UI5 CLI 3 consumer may install it on Node 16 or 18.
-- **A host that routes by the hash needs abap2UI5 1.146.0.** Its
-  bundle marks the component embedded (`componentData.embedded`, abap2UI5
-  `Component.init`), and an embedded component leaves the URL hash to the
-  host - 1.145.0 clears it after every roundtrip, which sends a Fiori
-  elements object page back to its list, and takes SAP Build Work Zone off
-  the page a card sits on. The control passes the bundle's component data
-  through and sets no flag of its own - except `ownsPage` and `ownsHash`,
-  and only when the host sets the property: a host whose page is the
-  control and nothing else hands the page back to the app (abap2UI5's
-  `state.ownsPage` - the hash, the title, the favicon, the busy indicator,
-  the "leave page?" prompt - from 1.147.0 on), or the hash
-  alone under its older name (`state.ownsHash`, from 1.147.0 on, which
-  reads it as `ownsPage`). `ownsPage` passes `ownsHash` with it. Both stay
-  off by default. The READMEs name 1.146.0
-  for the embedded flag.
+- **The backend floor is abap2UI5 1.150.0** - the release after 1.149.0,
+  the first whose bundle has `create( )` (0.4.0 needs it; 0.3.0 is the
+  version for 1.145.0 to 1.149.0). The package records it in its
+  `package.json` (`"abap2ui5": { "minBackend": "1.150.0" }`, the
+  custom-field style `@abap2ui5/node-runtime` uses), the package README
+  names it in prose, and the e2e job of `ci.yaml` runs the examples against
+  it (the published `@abap2ui5/node-runtime` of that version, read from the
+  field by the job `floor`) next to abap2UI5 main - **once it is published**:
+  until then the job `floor` says so and the leg is skipped, and the local
+  `npm run backend` (the root devDependency `@abap2ui5/node-runtime`, a
+  release before it) cannot start the examples either - run
+  `npm run express` in an abap2UI5 checkout of `main` instead. Raise the
+  floor in package.json and the READMEs - the package's and the examples' -
+  when the control starts to rely on something newer, and the devDependency
+  with it. A test that needs a newer backend is tagged `@after-<floor>`,
+  which the floor leg leaves out. The package has no `engines`: it is a
+  browser control without Node code, and a UI5 CLI 3 consumer may install it
+  on Node 16 or 18.
+- **`ownsPage` is the one flag the control hands over of its own**, and only
+  when the host sets it: a host whose page is the control and nothing else
+  hands the page to the app - the hash, the title, the favicon, the busy
+  indicator, the "leave page?" prompt - and may leave `app` empty, the
+  page's URL names the class then. Off by default. Its older name `ownsHash`
+  is gone since 0.4.0.
 
 ## Rules for the examples
 
@@ -205,11 +199,10 @@ range covers its version.
   in the e2e tests (`examples/freestyle/ui5-1.71.yaml`, the `ui5-1.71`
   project); keep
   it free of anything newer.
-- **abap2UI5 1.145.0 is the backend floor**, 1.146.0 what a host that routes
-  by the hash needs (the Fiori elements apps and the card). The READMEs name
-  both, and every example's README runs the local backend from
+- **abap2UI5 1.150.0 is the backend floor**, the package's. The READMEs name
+  it, and every example's README runs the local backend from
   `@abap2ui5/node-runtime` on npm (its version is the abap2UI5 release). A
-  test that needs a newer backend is tagged `@after-1.145.0`.
+  test that needs a newer backend is tagged `@after-<floor>`.
 - **`thirdparty/`, not `resources/`.** The control is served and built under
   `thirdparty/z2ui5/embed/` and registered with a relative resourceRoot in
   each manifest - an app deployed to an ABAP system answers every
@@ -306,7 +299,7 @@ CDS sources included; activation it cannot check.
   commit - the app is tested against the mock only.
 - **The app class is built like any abap2UI5 app** - `z2ui5_cl_ui5_view_builder`
   in the house chain layout, lifecycle checks in one IF chain - and only
-  with API of the release the READMEs name (1.146.0). The abap2UI5 linter
+  with API of the release the READMEs name (1.150.0). The abap2UI5 linter
   (`npx @abap2ui5/linter`) finds the rest.
 - Object names stay within 25 characters, the budget of abap2UI5's
   namespace rename.
