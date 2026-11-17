@@ -5,8 +5,8 @@
 // before either is involved - which endpoints it accepts and what URL it
 // requests, what it hands the component, when it starts, restarts and gives
 // up - case by case, in milliseconds; the examples' Playwright tests in
-// abap2UI5/samples-embed-control run the shipped control against a live
-// abap2UI5 for the rest.
+// test/e2e/ run the control in a browser against a live abap2UI5 for the
+// rest.
 //
 //   npm test
 

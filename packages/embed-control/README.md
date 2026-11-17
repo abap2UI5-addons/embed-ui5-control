@@ -103,8 +103,9 @@ app that runs keeps running, with its state, while its control is hidden.
 ## Examples
 
 Complete examples that use the package are in
-[abap2UI5/samples-embed-control](https://github.com/abap2UI5/samples-embed-control),
-on its branch `standard`, all taking the package from npm:
+[`examples/`](https://github.com/abap2UI5/embed-control/tree/main/examples)
+of this package's repository, and ready to clone on its branch `standard`,
+each naming the package as an npm dependency like any app:
 
 - `freestyle/` - a UI5 freestyle app with three controls, also as the BSP
   `Z2UI5_HOST` to try it on a system with a plain abapGit pull
@@ -118,7 +119,8 @@ on its branch `standard`, all taking the package from npm:
   abap2UI5 app: the class is a card parameter, the backend a card
   destination
 
-Its README walks through the places the package is wired in.
+[Their README](https://github.com/abap2UI5/embed-control/tree/main/examples#readme)
+walks through the places the package is wired in.
 
 ## Backend
 
@@ -172,7 +174,7 @@ app's origin:
   an approuter / destination routes `/sap/bc/z2ui5` to it
 - **`ui5 serve`** - a proxy middleware forwards `/sap` to the system, like
   `ui5-middleware-simpleproxy` in the
-  [examples](https://github.com/abap2UI5/samples-embed-control/tree/main/freestyle).
+  [examples](https://github.com/abap2UI5/embed-control/tree/main/examples/freestyle).
   It rewrites `Host` and tells the backend the dev server's host in
   `X-Forwarded-Host`, which abap2UI5 compares the browser's `Origin` with
   (trusted by default; `check_trust_forwarded_host` in the user exit)

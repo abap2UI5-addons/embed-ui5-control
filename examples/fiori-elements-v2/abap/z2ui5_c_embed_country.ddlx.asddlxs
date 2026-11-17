@@ -1,0 +1,49 @@
+@Metadata.layer: #CUSTOMER
+
+@UI.headerInfo: {
+  typeName: 'Country',
+  typeNamePlural: 'Countries',
+  title: { type: #STANDARD, value: 'CountryName' },
+  description: { type: #STANDARD, value: 'Country' }
+}
+
+annotate view Z2UI5_C_EMBED_COUNTRY with
+{
+
+  // "General" and "Language" - the facets the Fiori elements app places
+  // its two abap2UI5 sections after (manifest.json:
+  // "AfterFacet|Countries|General", "AfterFacet|Countries|Language")
+  @UI.facet: [
+      {
+        id: 'General',
+        purpose: #STANDARD,
+        type: #IDENTIFICATION_REFERENCE,
+        label: 'General Information',
+        position: 10
+      },
+      {
+        id: 'Language',
+        purpose: #STANDARD,
+        type: #FIELDGROUP_REFERENCE,
+        targetQualifier: 'Language',
+        label: 'Language',
+        position: 20
+      }
+    ]
+
+  @UI: { lineItem: [ { position: 10, importance: #HIGH } ],
+         identification: [ { position: 10 } ] }
+  Country;
+
+  @UI: { lineItem: [ { position: 20, importance: #HIGH } ],
+         identification: [ { position: 20 } ] }
+  CountryName;
+
+  @UI: { lineItem: [ { position: 30, importance: #HIGH } ],
+         identification: [ { position: 30 } ] }
+  Nationality;
+
+  @UI: { fieldGroup: [ { qualifier: 'Language', position: 10 } ] }
+  Language;
+
+}
