@@ -28,8 +28,12 @@ if (await backendAnswers()) {
   console.log(`abap2UI5 backend started on http://localhost:${PORT}`);
 }
 
-const ui5 = spawn("npm", ["run", "start-local", "--workspace", workspace], {
-  stdio: "inherit",
-  shell: process.platform === "win32",
-});
+const ui5 = spawn(
+  "npm",
+  ["run", "start-local", "--workspace", `examples/${workspace}`],
+  {
+    stdio: "inherit",
+    shell: process.platform === "win32",
+  },
+);
 ui5.on("exit", (code) => process.exit(code ?? 0));

@@ -1,13 +1,13 @@
 name: deliver
 
-# Makes the branches abapGit and the READMEs use - standard and rap - from
-# main, after the whole CI passed on it:
+# Makes the branches abapGit and the READMEs use - standard and rap, the
+# examples - from main, after the whole CI passed on it:
 #
 #   1. ci.yaml, all of it: the checks, the BSP build, the e2e tests against
-#      abap2UI5 main and the 1.145.0 floor.
+#      abap2UI5 main and the backend floor.
 #   2. scripts/build-bsp.mjs builds the trees out/standard and out/rap, with
-#      the control npm installed from package-lock.json and abap2UI5's BSP
-#      tools from its main.
+#      the control of packages/embed-control (the workspace package, which
+#      npm links for the examples) and abap2UI5's BSP tools from its main.
 #   3. Per branch one commit
 #
 #        parent = the main commit
@@ -21,9 +21,9 @@ name: deliver
 #
 # It runs on every push to main - a docs-only commit moves the branches too,
 # same content, new parent, which keeps the invariant - once a month, because
-# abap2UI5's BSP tools move without a change here, and by hand. A new version
-# of the control arrives as a change to package-lock.json (dependabot, or a
-# maintainer right after a release), and so with a push to main.
+# abap2UI5's BSP tools move without a change here, and by hand. A change to
+# the control reaches the BSPs with the push that merges it; VERSION on the
+# branch names the commit and the version of the control.
 #
 # It runs on GITHUB_TOKEN; the branches it pushes trigger nothing (filter:
 # main). A new branch goes into BRANCHES in build-bsp.mjs and into the loop
@@ -45,8 +45,10 @@ jobs:
 
   fan_out:
     needs: ci
-    # a fork, or a name this does not match, fans out nothing
-    if: github.repository == 'abap2UI5/samples-embed-control'
+    # a fork, or a name this does not match, fans out nothing - a renamed or
+    # transferred repository changes this line, like repository.url in
+    # packages/embed-control/package.json
+    if: github.repository == 'abap2UI5/embed-control'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:

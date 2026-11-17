@@ -1,26 +1,48 @@
 {
   "name": "embed-control-workspace",
   "private": true,
-  "description": "Workspace of @abap2ui5/embed-control: the npm package (packages/) - its examples are in abap2UI5/samples-embed-control",
+  "description": "Workspace of @abap2ui5/embed-control: the npm package (packages/) and its examples (examples/) - a UI5 freestyle app, Fiori elements apps for OData V4 and V2 (with the RAP service the latter reads) and a UI Integration Card",
   "license": "MIT",
   "engines": {
     "node": ">=22"
   },
   "workspaces": [
-    "packages/*"
+    "packages/*",
+    "examples/freestyle",
+    "examples/fiori-elements",
+    "examples/fiori-elements-v2",
+    "examples/card"
   ],
   "scripts": {
+    "start": "npm run start --workspace examples/freestyle",
+    "start:fe": "npm run start --workspace examples/fiori-elements",
+    "start:card": "npm run start --workspace examples/card",
+    "start:fe-v2": "npm run start --workspace examples/fiori-elements-v2",
+    "start-local": "node scripts/start-local.mjs freestyle",
+    "start-local:fe": "node scripts/start-local.mjs fiori-elements",
+    "start-local:card": "node scripts/start-local.mjs card",
+    "start-local:fe-v2": "node scripts/start-local.mjs fiori-elements-v2",
+    "backend": "node scripts/backend.mjs",
+    "build": "npm run build --workspaces --if-present",
+    "bsp": "node scripts/build-bsp.mjs",
+    "e2e": "playwright test",
     "pack:check": "npm pack --dry-run --workspace packages/embed-control",
     "consumer:check": "node scripts/consumer-check.mjs",
     "test": "node --test \"test/*.test.mjs\"",
     "lint": "eslint .",
     "format": "prettier --write \"**/*.{js,mjs,json,css}\"",
-    "format:check": "prettier --check \"**/*.{js,mjs,json,css}\""
+    "format:check": "prettier --check \"**/*.{js,mjs,json,css}\"",
+    "abaplint": "abaplint abaplint.jsonc"
   },
   "devDependencies": {
+    "@abap2ui5/node-runtime": "^1.148.0",
+    "@abaplint/cli": "^2.120.99",
     "@eslint/js": "^10.0.1",
-    "eslint": "^10.13.0",
-    "globals": "^17.13.0",
+    "@playwright/test": "^1.65.0",
+    "@ui5/cli": "^4.0.73",
+    "eslint": "^10.14.0",
+    "express": "^5.3.0",
+    "globals": "^17.14.0",
     "prettier": "^3.9.10"
   }
 }

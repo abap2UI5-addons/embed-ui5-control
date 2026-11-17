@@ -126,9 +126,9 @@ What to check on the first card:
 ## Where it comes from
 
 The card is developed in
-[abap2UI5/samples-embed-control](https://github.com/abap2UI5/samples-embed-control)
-as `card/` on `main`, next to the freestyle and Fiori elements examples -
-there, `npm install` at the repository root installs the package from npm
-for all of them. The branch `standard` carries it as `card/`. The control
-itself is developed in
-[abap2UI5/embed-control](https://github.com/abap2UI5/embed-control).
+[abap2UI5/embed-control](https://github.com/abap2UI5/embed-control)
+as `examples/card/` on `main`, next to the other examples and the control
+itself (`packages/embed-control`) - there, `npm install` at the repository
+root links the control of the same commit for all of them. The branch
+`standard` carries it as `card/`; here, `npm install` takes the package
+from npm.

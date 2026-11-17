@@ -2,8 +2,8 @@
 // into an app outside this workspace, and built there with the UI5 CLI - once
 // for every CLI major a consumer may have.
 //
-// The examples in abap2UI5/samples-embed-control build with the one CLI they
-// use. UI5 CLI 3 reads specVersion up to 3.2 and refuses a dependency with
+// The examples in examples/ build with the one CLI they use, and take the
+// package from the workspace, not from a tarball. UI5 CLI 3 reads specVersion up to 3.2 and refuses a dependency with
 // 4.0 - which is why the package's ui5.yaml stays at 3.0, and why this builds
 // with both.
 //

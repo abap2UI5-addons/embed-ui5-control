@@ -21,7 +21,7 @@ import { defineConfig } from "@playwright/test";
 // PW_CHROMIUM_PATH runs a Chromium that is already installed instead of the
 // one `npx playwright install chromium` downloads.
 const serve = (example, config, port, timeout, page = "index.html") => ({
-  command: `npm run serve --workspace ${example} -- --config ${config} --port ${port}`,
+  command: `npm run serve --workspace examples/${example} -- --config ${config} --port ${port}`,
   url: `http://localhost:${port}/${page}`,
   reuseExistingServer: !process.env.CI,
   // the first start downloads the UI5 libraries

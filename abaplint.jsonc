@@ -1,12 +1,12 @@
 // The ABAP of the examples - the RAP service and the abap2UI5 app of
-// fiori-elements-v2/abap - checked against abap2UI5's main, the way
+// examples/fiori-elements-v2/abap - checked against abap2UI5's main, the way
 // a system with abap2UI5 installed would see it (npm run abaplint, ci.yaml
 // job check). abaplint does not activate RAP objects: it parses the CDS
 // sources, and checks the class against the view entity it selects from;
 // the service binding is beyond it.
 {
   "global": {
-    "files": "/*/abap/**/*.*",
+    "files": "/examples/*/abap/**/*.*",
     "skipGeneratedGatewayClasses": true,
     "skipGeneratedPersistentClasses": true,
     "skipGeneratedProxyClasses": true

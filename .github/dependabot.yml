@@ -1,14 +1,18 @@
-# Monthly, grouped: one pull request per ecosystem and update type, so CI
-# decides whether a bump is safe. The control itself has no dependencies;
-# what moves here is the tooling of the workspace (lint, format). The
-# examples' tooling is bumped in abap2UI5/samples-embed-control.
+# Weekly, grouped: one pull request per group, so CI (the e2e tests against
+# abap2UI5 main and the backend floor) decides whether a bump is safe. The
+# control itself has no dependencies; what moves is the tooling of the
+# workspace and the examples (UI5 CLI, middlewares, Playwright, lint,
+# format). The examples take the control from packages/embed-control, never
+# from the registry.
 version: 2
 updates:
   - package-ecosystem: npm
     directory: /
     schedule:
-      interval: monthly
+      interval: weekly
     open-pull-requests-limit: 5
+    ignore:
+      - dependency-name: "@abap2ui5/embed-control"
     groups:
       dependencies:
         patterns: ["*"]

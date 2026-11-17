@@ -152,9 +152,9 @@ nothing else is needed: the proxy is for `ui5 serve` only.
 ## Where it comes from
 
 The app is developed in
-[abap2UI5/samples-embed-control](https://github.com/abap2UI5/samples-embed-control)
-as `fiori-elements/` on `main`, next to the other examples - there,
-`npm install` at the repository root installs the package from npm for all
-of them. The branch `standard` carries it as this UI5 project. The control
-itself is developed in
-[abap2UI5/embed-control](https://github.com/abap2UI5/embed-control).
+[abap2UI5/embed-control](https://github.com/abap2UI5/embed-control)
+as `examples/fiori-elements/` on `main`, next to the other examples and the control
+itself (`packages/embed-control`) - there, `npm install` at the repository
+root links the control of the same commit for all of them. The branch
+`standard` carries it as this UI5 project; here, `npm install` takes the
+package from npm.

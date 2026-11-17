@@ -6,6 +6,10 @@ own, and nothing may be left under "Unreleased".
 
 ## Unreleased
 
+- Docs: the examples moved from abap2UI5/samples-embed-control into this
+  package's repository (`examples/`, and its branches `standard` and
+  `rap`); the README links them there. Nothing in the control changes.
+
 ## 0.3.0
 
 - `ownsPage` (boolean, default `false`): hands the page to the app, as

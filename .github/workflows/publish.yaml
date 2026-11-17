@@ -4,15 +4,16 @@ name: publish
 # trusted publishing, from a commit that has just passed the whole CI.
 #
 # To cut a release:
-#   1. bump "version" in packages/embed-control/package.json
+#   1. bump "version" in packages/embed-control/package.json - and, when the
+#      version leaves the examples' range (a new 0.x minor), the range in
+#      every examples/*/package.json with it, then npm install: the examples
+#      take the workspace package only while their range covers it (ci.yaml,
+#      job check, fails otherwise)
 #   2. in packages/embed-control/CHANGELOG.md, move what is under
 #      "## Unreleased" under "## <version>"
 #   3. merge, then create a GitHub release with the tag v<version>
 # scripts/release-check.mjs refuses a tag, version or changelog that
-# disagree before anything reaches the registry. The examples in
-# abap2UI5/samples-embed-control take the new version with a bump of their
-# lockfile - dependabot's, or one by hand right after the release (and of
-# their ranges, when the version leaves them).
+# disagree before anything reaches the registry.
 #
 # Actions -> publish -> Run workflow is a dry run: the same CI and checks,
 # the tarball printed, nothing published.
@@ -47,8 +48,8 @@ permissions:
 
 jobs:
   # everything ci.yaml runs - the checks, the packed package built with UI5
-  # CLI 3 and 4, the examples of samples-embed-control with this control
-  # against abap2UI5's main and the floor - on the commit to publish
+  # CLI 3 and 4, the branch build, the examples with this control against
+  # abap2UI5's main and the floor - on the commit to publish
   ci:
     uses: ./.github/workflows/ci.yaml
 

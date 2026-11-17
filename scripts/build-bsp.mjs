@@ -1,6 +1,6 @@
-// Builds the branches of this repository: the examples the way apps take
-// @abap2ui5/embed-control from npm - as UI5 projects, and built into BSPs to
-// install with abapGit and try the control on a real system. No copy of the
+// Builds the branches of this repository: the examples in examples/ the way
+// apps take @abap2ui5/embed-control from npm - as UI5 projects, and built into
+// BSPs to install with abapGit and try the control on a real system. No copy of the
 // abap2UI5 frontend anywhere: the control loads it from the system's
 // /sap/bc/z2ui5?z2ui5-bundle, as in any other app.
 //
@@ -30,6 +30,8 @@
 //                    any app that names the package under includeDependency.
 //                    Neither is patched
 //   .abapgit.xml, README.md, LICENSE, VERSION
+// The examples sit at the root of a branch, without examples/ - a branch is
+// what someone clones to try them, and its README is examples/README.md.
 // out/rap/ - a system with RAP and OData V2 (SAP S/4HANA 2020 and later):
 //   src/01/          fiori-elements-v2/abap: the RAP service of the Fiori
 //                    elements app for OData V2 and the abap2UI5 app it
@@ -44,11 +46,13 @@
 // The deliver workflow runs this on every push to main and writes each tree
 // as one commit on top of main to its branch.
 //
-// The control is the one npm installed: node_modules/@abap2ui5/embed-control,
-// in the version package-lock.json names - from the registry, as in any app.
-// abap2UI5/embed-control's CI runs this build too, with node_modules holding
-// the control of its commit instead: does a change to the control still build
-// into the BSPs?
+// The control is packages/embed-control of the same commit: the examples name
+// @abap2ui5/embed-control by a range that covers its version, so npm links
+// the workspace package into node_modules instead of taking one from the
+// registry - and this build refuses anything else. A branch carries the
+// control of the main it is built from; VERSION names both. Someone who
+// clones a branch and runs npm install gets the package from the registry,
+// by the same range.
 //
 // The BSPs are made by abap2UI5's own tools, the ones that build its frontend
 // BSP for abap2UI5/frontend, taken from the checkout ABAP2UI5_DIR names:
@@ -247,14 +251,15 @@ const node = (nodeArgs, cwd) => run(process.execPath, nodeArgs, cwd);
 // An example as git has it - so never a local .env, node_modules or dist/ -
 // without what only the tests use
 function copyExample(name, dest) {
-  const files = run("git", ["ls-files", "-z", "--", name], root)
+  const dir = join("examples", name);
+  const files = run("git", ["ls-files", "-z", "--", dir], root)
     .split("\0")
     .filter(Boolean);
   if (!files.length) {
-    throw new Error(`build-bsp: git has no file in ${name}/`);
+    throw new Error(`build-bsp: git has no file in ${dir}/`);
   }
   for (const file of files) {
-    const path = relative(name, file);
+    const path = relative(dir, file);
     if ((TESTS_ONLY[name] || []).includes(path)) continue;
     mkdirSync(dirname(join(dest, path)), { recursive: true });
     cpSync(join(root, file), join(dest, path));
@@ -277,16 +282,28 @@ function checkShown(name, dir) {
   for (const [file, text] of SHOWN[name]) mustContain(join(dir, file), text);
 }
 
-// The package the way the examples get it: what npm installed - one copy, at
-// the root of the workspace, which every example resolves
+// The package the way the examples get it: one copy, at the root of the
+// workspace, which every example resolves - and that copy is the workspace
+// package, linked by npm. A range that no longer covers the version of
+// packages/embed-control makes npm take one from the registry instead.
 function installedControl() {
   const dir = join(root, "node_modules", NAME);
   if (!existsSync(join(dir, "package.json"))) {
     throw new Error(`build-bsp: ${NAME} is not installed - run npm ci first`);
   }
+  if (
+    realpathSync(dir) !== realpathSync(join(root, "packages", "embed-control"))
+  ) {
+    throw new Error(
+      `build-bsp: node_modules/${NAME} is not packages/embed-control - ` +
+        "the examples' range does not cover its version",
+    );
+  }
   for (const name of EXAMPLES) {
-    if (existsSync(join(root, name, "node_modules", NAME))) {
-      throw new Error(`build-bsp: ${name}/ has a copy of ${NAME} of its own`);
+    if (existsSync(join(root, "examples", name, "node_modules", NAME))) {
+      throw new Error(
+        `build-bsp: examples/${name}/ has a copy of ${NAME} of its own`,
+      );
     }
   }
   const { version } = JSON.parse(
@@ -391,7 +408,7 @@ function buildBsp(tree, work, control, bsp) {
 // Built in a folder of its own and copied to out/ once complete, so a failed
 // build leaves no tree behind that looks like a result.
 rmSync(outRoot, { recursive: true, force: true });
-const work = mkdtempSync(join(tmpdir(), "samples-embed-control-bsp-"));
+const work = mkdtempSync(join(tmpdir(), "embed-control-bsp-"));
 let version;
 try {
   for (const name of EXAMPLES) {
@@ -404,9 +421,9 @@ try {
   mustContain(join(control, "ui5.yaml"), `/${THIRDPARTY}: ./src/`);
   const provenance = (branch) =>
     [
-      `Generated abap2UI5/samples-embed-control branch ${branch} - provenance`,
-      `built from: abap2UI5/samples-embed-control@${commitOf(root)}`,
-      `control:    ${NAME}@${version}`,
+      `Generated abap2UI5/embed-control branch ${branch} - provenance`,
+      `built from: abap2UI5/embed-control@${commitOf(root)}`,
+      `control:    ${NAME}@${version} (packages/embed-control of that commit)`,
       `BSP tools:  abap2UI5/abap2UI5@${commitOf(a2)}`,
       "",
     ].join("\n");
@@ -416,13 +433,13 @@ try {
   mkdirSync(checker, { recursive: true });
   cpSync(join(a2, "tools", "check-pages.mjs"), join(checker, "check.mjs"));
 
-  // The README every branch carries: main's, with a first line that says
-  // where the branch comes from.
+  // The README every branch carries: the one of the examples, with a first
+  // line that says where the branch comes from.
   const readme =
     "> ⚙️ **Generated branch** - built from `main` of this repository by " +
     "its `deliver` workflow; `VERSION` names the commit and the version of " +
     "the control. Do not change it here - change `main`.\n\n" +
-    readFileSync(join(root, "README.md"), "utf8");
+    readFileSync(join(root, "examples", "README.md"), "utf8");
 
   for (const [branch, def] of Object.entries(BRANCHES)) {
     const tree = join(work, "out", branch);
@@ -463,4 +480,4 @@ for (const [branch, def] of Object.entries(BRANCHES)) {
   ];
   console.log(`build-bsp: out/${branch}/ - ${parts.join(", ")}`);
 }
-console.log(`build-bsp: ${NAME}@${version} from node_modules`);
+console.log(`build-bsp: ${NAME}@${version} from packages/embed-control`);
