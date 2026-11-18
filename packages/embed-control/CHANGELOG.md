@@ -6,6 +6,11 @@ own, and nothing may be left under "Unreleased".
 
 ## Unreleased
 
+- The repository moved to abap2UI5-addons/embed-ui5-control (from
+  abap2UI5/embed-control); `repository`, `homepage` and `bugs` in
+  package.json and the README links follow. The npm name stays
+  `@abap2ui5/embed-control`. Nothing in the control changes.
+
 ## 0.4.0
 
 - **The control is a shell, and needs the abap2UI5 release after 1.149.0.**

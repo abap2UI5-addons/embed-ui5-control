@@ -165,7 +165,7 @@ npm publish --workspace packages/embed-control --access public
 Then:
 
 1. npmjs.com → `@abap2ui5/embed-control` → Settings → Trusted Publisher →
-   GitHub Actions: organisation `abap2UI5`, repository `embed-control`,
+   GitHub Actions: organisation `abap2UI5-addons`, repository `embed-ui5-control`,
    workflow `publish.yaml`, no environment. From now on `publish.yaml`
    publishes.
 2. Create the GitHub release `v0.1.0` on that commit. `publish.yaml` finds

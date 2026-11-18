@@ -15,7 +15,7 @@ implementing `z2ui5_if_app` - inside any UI5 app. And its examples
 Build Work Zone, their Playwright tests (`test/e2e/`) and the build of the
 branches `standard` and `rap` that deliver them (`scripts/build-bsp.mjs`,
 written by the `deliver` workflow). The examples lived in
-abap2UI5/samples-embed-control until they moved here, with their history.
+abap2UI5-addons/embed-ui5-control until they moved here, with their history.
 
 **Language:** English for all code, comments, docs, commit messages, PRs.
 

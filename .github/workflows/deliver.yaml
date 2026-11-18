@@ -48,7 +48,7 @@ jobs:
     # a fork, or a name this does not match, fans out nothing - a renamed or
     # transferred repository changes this line, like repository.url in
     # packages/embed-control/package.json
-    if: github.repository == 'abap2UI5/embed-control'
+    if: github.repository == 'abap2UI5-addons/embed-ui5-control'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:

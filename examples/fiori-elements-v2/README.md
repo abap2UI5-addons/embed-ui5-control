@@ -175,7 +175,7 @@ is needed. Fiori elements for OData V2 is part of SAPUI5, not of OpenUI5:
 
 ## On a system: the branch `rap`
 
-[abap2UI5/embed-control](https://github.com/abap2UI5/embed-control)
+[abap2UI5-addons/embed-ui5-control](https://github.com/abap2UI5-addons/embed-ui5-control)
 delivers all of it, ready for one abapGit pull, on its branch `rap`: the
 objects of `abap/` in `src/01`, and this app as the BSP `Z2UI5_HOST_FE` in
 `src/02` - the control in `thirdparty/z2ui5/embed/`, the mock
@@ -216,7 +216,7 @@ What the control takes over:
 ## Where it comes from
 
 The app is developed in
-[abap2UI5/embed-control](https://github.com/abap2UI5/embed-control)
+[abap2UI5-addons/embed-ui5-control](https://github.com/abap2UI5-addons/embed-ui5-control)
 as `examples/fiori-elements-v2/` on `main`, next to the other examples and the control
 itself (`packages/embed-control`) - there, `npm install` at the repository
 root links the control of the same commit for all of them. The branch

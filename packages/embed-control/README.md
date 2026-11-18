@@ -103,7 +103,7 @@ app that runs keeps running, with its state, while its control is hidden.
 ## Examples
 
 Complete examples that use the package are in
-[`examples/`](https://github.com/abap2UI5/embed-control/tree/main/examples)
+[`examples/`](https://github.com/abap2UI5-addons/embed-ui5-control/tree/main/examples)
 of this package's repository, and ready to clone on its branch `standard`,
 each naming the package as an npm dependency like any app:
 
@@ -119,7 +119,7 @@ each naming the package as an npm dependency like any app:
   abap2UI5 app: the class is a card parameter, the backend a card
   destination
 
-[Their README](https://github.com/abap2UI5/embed-control/tree/main/examples#readme)
+[Their README](https://github.com/abap2UI5-addons/embed-ui5-control/tree/main/examples#readme)
 walks through the places the package is wired in.
 
 ## Backend
@@ -158,7 +158,7 @@ app's origin:
   an approuter / destination routes `/sap/bc/z2ui5` to it
 - **`ui5 serve`** - a proxy middleware forwards `/sap` to the system, like
   `ui5-middleware-simpleproxy` in the
-  [examples](https://github.com/abap2UI5/embed-control/tree/main/examples/freestyle).
+  [examples](https://github.com/abap2UI5-addons/embed-ui5-control/tree/main/examples/freestyle).
   It rewrites `Host` and tells the backend the dev server's host in
   `X-Forwarded-Host`, which abap2UI5 compares the browser's `Origin` with
   (trusted by default; `check_trust_forwarded_host` in the user exit)
