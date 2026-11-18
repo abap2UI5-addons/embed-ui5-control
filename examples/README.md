@@ -3,7 +3,7 @@
 abap2UI5 apps inside any UI5 app, with the npm package
 [`@abap2ui5/embed-control`](https://www.npmjs.com/package/@abap2ui5/embed-control)
 (developed next to them in
-[abap2UI5/embed-control](https://github.com/abap2UI5/embed-control),
+[abap2UI5-addons/embed-ui5-control](https://github.com/abap2UI5-addons/embed-ui5-control),
 `packages/embed-control`): the examples, ready to read, run and install. A `z2ui5.embed.Container` control runs an abap2UI5
 app - an ABAP class implementing `z2ui5_if_app` - in its own backend
 session, wherever the host app places it:
@@ -20,11 +20,11 @@ The branch `standard` has three host apps and a card:
 
 | Path | |
 |---|---|
-| [`freestyle/`](https://github.com/abap2UI5/embed-control/tree/standard/freestyle) | a UI5 freestyle app with three containers - the package is an npm dependency like any other |
-| [`fiori-elements/`](https://github.com/abap2UI5/embed-control/tree/standard/fiori-elements) | a Fiori elements app for OData V4, list report and object page, with the control in **two custom sections** of the object page - two abap2UI5 apps side by side, each in its own session, both getting the key of the object on the page |
-| [`fiori-elements-v2/`](https://github.com/abap2UI5/embed-control/tree/standard/fiori-elements-v2) | a Fiori elements app for **OData V2** with the control in **two extensions of its object page**, and in `abap/` the **RAP service** it reads and the two abap2UI5 apps it starts - the apps get fields of the object on the page |
-| [`card/`](https://github.com/abap2UI5/embed-control/tree/standard/card) | a **UI Integration Card** for SAP Build Work Zone that runs any abap2UI5 app - the class is a card parameter, the backend a card destination |
-| [`src/`](https://github.com/abap2UI5/embed-control/tree/standard/src) | the freestyle app as the BSP `Z2UI5_HOST`, with the control where `ui5 build` puts it - to try it on a system with a plain abapGit pull |
+| [`freestyle/`](https://github.com/abap2UI5-addons/embed-ui5-control/tree/standard/freestyle) | a UI5 freestyle app with three containers - the package is an npm dependency like any other |
+| [`fiori-elements/`](https://github.com/abap2UI5-addons/embed-ui5-control/tree/standard/fiori-elements) | a Fiori elements app for OData V4, list report and object page, with the control in **two custom sections** of the object page - two abap2UI5 apps side by side, each in its own session, both getting the key of the object on the page |
+| [`fiori-elements-v2/`](https://github.com/abap2UI5-addons/embed-ui5-control/tree/standard/fiori-elements-v2) | a Fiori elements app for **OData V2** with the control in **two extensions of its object page**, and in `abap/` the **RAP service** it reads and the two abap2UI5 apps it starts - the apps get fields of the object on the page |
+| [`card/`](https://github.com/abap2UI5-addons/embed-ui5-control/tree/standard/card) | a **UI Integration Card** for SAP Build Work Zone that runs any abap2UI5 app - the class is a card parameter, the backend a card destination |
+| [`src/`](https://github.com/abap2UI5-addons/embed-ui5-control/tree/standard/src) | the freestyle app as the BSP `Z2UI5_HOST`, with the control where `ui5 build` puts it - to try it on a system with a plain abapGit pull |
 | `VERSION` | the commit of `main`, the version of `@abap2ui5/embed-control` and the abap2UI5 tools the branch is built from |
 
 The branch `rap` is the OData V2 app on a system - one abapGit pull for a
@@ -32,8 +32,8 @@ system with RAP:
 
 | Path | |
 |---|---|
-| [`src/01/`](https://github.com/abap2UI5/embed-control/tree/rap/src/01) | the RAP service of `fiori-elements-v2/abap` - CDS view, metadata extension, service definition, OData V2 binding - and the abap2UI5 apps `Z2UI5_CL_EMBED_COUNTRY` and `Z2UI5_CL_EMBED_LANGUAGES` |
-| [`src/02/`](https://github.com/abap2UI5/embed-control/tree/rap/src/02) | `fiori-elements-v2` as the BSP `Z2UI5_HOST_FE`, on that service and starting those apps |
+| [`src/01/`](https://github.com/abap2UI5-addons/embed-ui5-control/tree/rap/src/01) | the RAP service of `fiori-elements-v2/abap` - CDS view, metadata extension, service definition, OData V2 binding - and the abap2UI5 apps `Z2UI5_CL_EMBED_COUNTRY` and `Z2UI5_CL_EMBED_LANGUAGES` |
+| [`src/02/`](https://github.com/abap2UI5-addons/embed-ui5-control/tree/rap/src/02) | `fiori-elements-v2` as the BSP `Z2UI5_HOST_FE`, on that service and starting those apps |
 | `VERSION` | as on `standard` |
 
 None of them carries a copy of the abap2UI5 frontend: the control loads it
@@ -46,14 +46,14 @@ Four steps - the first three are the same in every app, the fourth places
 the control.
 
 **1. Install it** -
-[`freestyle/package.json`](https://github.com/abap2UI5/embed-control/blob/standard/freestyle/package.json):
+[`freestyle/package.json`](https://github.com/abap2UI5-addons/embed-ui5-control/blob/standard/freestyle/package.json):
 
 ```bash
 npm install @abap2ui5/embed-control
 ```
 
 **2. Take it into the build** -
-[`freestyle/ui5.yaml`](https://github.com/abap2UI5/embed-control/blob/standard/freestyle/ui5.yaml).
+[`freestyle/ui5.yaml`](https://github.com/abap2UI5-addons/embed-ui5-control/blob/standard/freestyle/ui5.yaml).
 `ui5 serve` serves the control anyway; `ui5 build` copies it into
 `dist/thirdparty/z2ui5/embed/` only for a dependency named here:
 
@@ -65,7 +65,7 @@ builder:
 ```
 
 **3. Register its namespace** -
-[`freestyle/webapp/manifest.json`](https://github.com/abap2UI5/embed-control/blob/standard/freestyle/webapp/manifest.json):
+[`freestyle/webapp/manifest.json`](https://github.com/abap2UI5-addons/embed-ui5-control/blob/standard/freestyle/webapp/manifest.json):
 
 ```json
 "sap.ui5": {
@@ -77,7 +77,7 @@ builder:
 every `<app>/resources/` path from the UI5 of the system.
 
 **4. Place the control** - in a view of your own,
-[`freestyle/webapp/view/Main.view.xml`](https://github.com/abap2UI5/embed-control/blob/standard/freestyle/webapp/view/Main.view.xml):
+[`freestyle/webapp/view/Main.view.xml`](https://github.com/abap2UI5-addons/embed-ui5-control/blob/standard/freestyle/webapp/view/Main.view.xml):
 
 ```xml
 <mvc:View xmlns:mvc="sap.ui.core.mvc" xmlns:z2ui5="z2ui5.embed">
@@ -93,7 +93,7 @@ That is all a deployed app needs, as long as the page and abap2UI5 share an
 origin: the app served from the same system (BSP, launchpad), or an
 approuter that routes `/sap/bc/z2ui5` to it. `ui5 serve` needs a proxy for
 `/sap` to the system -
-[`freestyle/ui5.yaml`](https://github.com/abap2UI5/embed-control/blob/standard/freestyle/ui5.yaml)
+[`freestyle/ui5.yaml`](https://github.com/abap2UI5-addons/embed-ui5-control/blob/standard/freestyle/ui5.yaml)
 shows it. `ui5-middleware-simpleproxy` tells the backend the dev server's
 host in `X-Forwarded-Host`, and abap2UI5's CSRF check compares the browser's
 `Origin` with it - nothing else is needed.
@@ -108,7 +108,7 @@ The object page of a Fiori elements app takes content of its own as a
 custom section - an entry in the manifest and a fragment. There the
 control runs an abap2UI5 app for the object on the page, and the example
 has two of them, one after the other:
-[`fiori-elements/webapp/manifest.json`](https://github.com/abap2UI5/embed-control/blob/standard/fiori-elements/webapp/manifest.json),
+[`fiori-elements/webapp/manifest.json`](https://github.com/abap2UI5-addons/embed-ui5-control/blob/standard/fiori-elements/webapp/manifest.json),
 in the object page's settings:
 
 ```json
@@ -130,9 +130,9 @@ in the object page's settings:
 }
 ```
 
-[`fiori-elements/webapp/ext/Abap2UI5Section.fragment.xml`](https://github.com/abap2UI5/embed-control/blob/standard/fiori-elements/webapp/ext/Abap2UI5Section.fragment.xml),
+[`fiori-elements/webapp/ext/Abap2UI5Section.fragment.xml`](https://github.com/abap2UI5-addons/embed-ui5-control/blob/standard/fiori-elements/webapp/ext/Abap2UI5Section.fragment.xml),
 bound to the object - `ID` is the key of the customer on the page, and
-[`ext/Abap2UI5Section.js`](https://github.com/abap2UI5/embed-control/blob/standard/fiori-elements/webapp/ext/Abap2UI5Section.js)
+[`ext/Abap2UI5Section.js`](https://github.com/abap2UI5-addons/embed-ui5-control/blob/standard/fiori-elements/webapp/ext/Abap2UI5Section.js)
 turns it into the class to run and its parameters:
 
 ```xml
@@ -146,7 +146,7 @@ turns it into the class to run and its parameters:
 The ABAP class reads the key with
 `client->get( )-t_comp_params` - a snippet, and why `targetType: 'any'` is
 there, are in
-[`fiori-elements/README.md`](https://github.com/abap2UI5/embed-control/blob/standard/fiori-elements/README.md).
+[`fiori-elements/README.md`](https://github.com/abap2UI5-addons/embed-ui5-control/blob/standard/fiori-elements/README.md).
 Another customer ends the running abap2UI5 session and starts a new one
 with its key. The second section is the same fragment with another
 formatter for `app`: every control is an abap2UI5 session of its own, so two
@@ -163,7 +163,7 @@ control starts on does (1.150.0 or later, see "Install the BSP").
 The templates for OData V2 take content of their own as a view extension of
 the object page - again an entry in the manifest and a fragment, here two:
 a section after the facet `General`, and one after the facet `Language`:
-[`fiori-elements-v2/webapp/manifest.json`](https://github.com/abap2UI5/embed-control/blob/standard/fiori-elements-v2/webapp/manifest.json):
+[`fiori-elements-v2/webapp/manifest.json`](https://github.com/abap2UI5-addons/embed-ui5-control/blob/standard/fiori-elements-v2/webapp/manifest.json):
 
 ```json
 "sap.ui.viewExtensions": {
@@ -184,9 +184,9 @@ a section after the facet `General`, and one after the facet `Language`:
 }
 ```
 
-[`fiori-elements-v2/webapp/ext/Abap2UI5Section.fragment.xml`](https://github.com/abap2UI5/embed-control/blob/standard/fiori-elements-v2/webapp/ext/Abap2UI5Section.fragment.xml)
+[`fiori-elements-v2/webapp/ext/Abap2UI5Section.fragment.xml`](https://github.com/abap2UI5-addons/embed-ui5-control/blob/standard/fiori-elements-v2/webapp/ext/Abap2UI5Section.fragment.xml)
 hands three fields of the country on the page to the first app,
-[`Abap2UI5Languages.fragment.xml`](https://github.com/abap2UI5/embed-control/blob/standard/fiori-elements-v2/webapp/ext/Abap2UI5Languages.fragment.xml)
+[`Abap2UI5Languages.fragment.xml`](https://github.com/abap2UI5-addons/embed-ui5-control/blob/standard/fiori-elements-v2/webapp/ext/Abap2UI5Languages.fragment.xml)
 the country alone to the second:
 
 ```xml
@@ -198,7 +198,7 @@ the country alone to the second:
 ```
 
 The service is a RAP service, and it is part of the example:
-[`fiori-elements-v2/abap/`](https://github.com/abap2UI5/embed-control/tree/standard/fiori-elements-v2/abap)
+[`fiori-elements-v2/abap/`](https://github.com/abap2UI5-addons/embed-ui5-control/tree/standard/fiori-elements-v2/abap)
 has the CDS view, its metadata extension with the two facets, the service
 definition, the OData V2 binding and the two abap2UI5 apps:
 `Z2UI5_CL_EMBED_COUNTRY`, which reads the fields by name and the country
@@ -209,7 +209,7 @@ the binding's own paths; the branch `rap` has it all for a system -
 [below](#install-the-branch-rap). It is the successor of
 `abap2UI5-addons/fiori-elements-integration` (no longer published),
 without its controller extension and its launchpad target mapping -
-[`fiori-elements-v2/README.md`](https://github.com/abap2UI5/embed-control/blob/standard/fiori-elements-v2/README.md)
+[`fiori-elements-v2/README.md`](https://github.com/abap2UI5-addons/embed-ui5-control/blob/standard/fiori-elements-v2/README.md)
 compares the two.
 
 ## In SAP Build Work Zone: a UI Integration Card
@@ -219,7 +219,7 @@ The cards of SAP Build Work Zone are UI Integration Cards, and one of type
 its view. The card is generic: the class it runs is a card parameter, so an
 administrator places it on a page as often as needed and configures each
 one, the way an FLP tile names its class with `?app_start=`.
-[`card/webapp/manifest.json`](https://github.com/abap2UI5/embed-control/blob/standard/card/webapp/manifest.json)
+[`card/webapp/manifest.json`](https://github.com/abap2UI5-addons/embed-ui5-control/blob/standard/card/webapp/manifest.json)
 names a destination instead of a URL, and the class as a parameter:
 
 ```json
@@ -232,12 +232,12 @@ names a destination instead of a URL, and the class as a parameter:
 }
 ```
 
-[`card/webapp/Component.js`](https://github.com/abap2UI5/embed-control/blob/standard/card/webapp/Component.js)
+[`card/webapp/Component.js`](https://github.com/abap2UI5-addons/embed-ui5-control/blob/standard/card/webapp/Component.js)
 resolves the destination in `onCardReady` - Work Zone answers with a path of
 its own origin that it proxies to the system behind the BTP destination -
 and hands the class, the endpoint and every further parameter to the
 control in
-[`card/webapp/view/Card.view.xml`](https://github.com/abap2UI5/embed-control/blob/standard/card/webapp/view/Card.view.xml):
+[`card/webapp/view/Card.view.xml`](https://github.com/abap2UI5-addons/embed-ui5-control/blob/standard/card/webapp/view/Card.view.xml):
 
 ```xml
 <z2ui5:Container app="{embed>/app}" endpoint="{embed>/endpoint}" params="{embed>/params}" height="{embed>/height}"/>
@@ -246,14 +246,14 @@ control in
 The further parameters reach the ABAP class as startup parameters,
 `client->get( )-t_comp_params` - one class, configured per card. Work Zone
 routes by the URL hash as well, which the embedded app leaves alone.
-[`card/README.md`](https://github.com/abap2UI5/embed-control/blob/standard/card/README.md)
+[`card/README.md`](https://github.com/abap2UI5-addons/embed-ui5-control/blob/standard/card/README.md)
 lists the parameters and the way into Work Zone, and what to check on the
 first card.
 
 ## Run the examples
 
 ```bash
-git clone --branch standard https://github.com/abap2UI5/embed-control.git
+git clone --branch standard https://github.com/abap2UI5-addons/embed-ui5-control.git
 cd embed-control/freestyle              # or fiori-elements, fiori-elements-v2, card
 npm install
 ```
@@ -282,11 +282,11 @@ system.
 
 Every example needs abap2UI5 1.150.0 or later. The
 READMEs of
-[`freestyle/`](https://github.com/abap2UI5/embed-control/blob/standard/freestyle/README.md),
-[`fiori-elements/`](https://github.com/abap2UI5/embed-control/blob/standard/fiori-elements/README.md),
-[`fiori-elements-v2/`](https://github.com/abap2UI5/embed-control/blob/standard/fiori-elements-v2/README.md)
+[`freestyle/`](https://github.com/abap2UI5-addons/embed-ui5-control/blob/standard/freestyle/README.md),
+[`fiori-elements/`](https://github.com/abap2UI5-addons/embed-ui5-control/blob/standard/fiori-elements/README.md),
+[`fiori-elements-v2/`](https://github.com/abap2UI5-addons/embed-ui5-control/blob/standard/fiori-elements-v2/README.md)
 and
-[`card/`](https://github.com/abap2UI5/embed-control/blob/standard/card/README.md)
+[`card/`](https://github.com/abap2UI5-addons/embed-ui5-control/blob/standard/card/README.md)
 have both ways. The Fiori elements apps answer their own OData services from
 mock data, and take SAPUI5 from npm - Fiori elements is not part of
 OpenUI5. The card opens on a preview page: three cards and a stand-in for
@@ -388,7 +388,7 @@ BSP Z2UI5_HOST_FE                                  the Fiori elements app
 
 ## Develop
 
-`main` of [abap2UI5/embed-control](https://github.com/abap2UI5/embed-control)
+`main` of [abap2UI5-addons/embed-ui5-control](https://github.com/abap2UI5-addons/embed-ui5-control)
 is the source of both branches: the examples are in `examples/` there, next
 to the control (`packages/embed-control`), in one npm workspace -
 `npm install` at its root links the control of the same commit into every
@@ -396,12 +396,12 @@ example, so a change to the control is tested against them before it is
 published. The `deliver` workflow builds the branches from `main` on every
 push and writes each as one commit on top of it - never change a branch by
 hand. How to run, test and change the examples is in the repository's
-[README](https://github.com/abap2UI5/embed-control#readme).
+[README](https://github.com/abap2UI5-addons/embed-ui5-control#readme).
 
 ## Issues
 
 For bug reports or feature requests, open an issue in
-[abap2UI5/embed-control](https://github.com/abap2UI5/embed-control/issues)
+[abap2UI5-addons/embed-ui5-control](https://github.com/abap2UI5-addons/embed-ui5-control/issues)
 (the examples, the control) or
 [abap2UI5/abap2UI5](https://github.com/abap2UI5/abap2UI5/issues) (the
 frontend, the backend).

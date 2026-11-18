@@ -66,7 +66,7 @@ missing there fails in the browser console with a script load error.
 ## Where it comes from
 
 The app is developed in
-[abap2UI5/embed-control](https://github.com/abap2UI5/embed-control)
+[abap2UI5-addons/embed-ui5-control](https://github.com/abap2UI5-addons/embed-ui5-control)
 as `examples/freestyle/` on `main`, next to the other examples and the control
 itself (`packages/embed-control`) - there, `npm install` at the repository
 root links the control of the same commit for all of them. The branch

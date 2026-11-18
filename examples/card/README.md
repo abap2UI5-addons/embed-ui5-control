@@ -125,7 +125,7 @@ What to check on the first card:
 ## Where it comes from
 
 The card is developed in
-[abap2UI5/embed-control](https://github.com/abap2UI5/embed-control)
+[abap2UI5-addons/embed-ui5-control](https://github.com/abap2UI5-addons/embed-ui5-control)
 as `examples/card/` on `main`, next to the other examples and the control
 itself (`packages/embed-control`) - there, `npm install` at the repository
 root links the control of the same commit for all of them. The branch

@@ -378,8 +378,8 @@ try {
   mustContain(join(control, "ui5.yaml"), `/${THIRDPARTY}: ./src/`);
   const provenance = (branch) =>
     [
-      `Generated abap2UI5/embed-control branch ${branch} - provenance`,
-      `built from: abap2UI5/embed-control@${commitOf(root)}`,
+      `Generated abap2UI5-addons/embed-ui5-control branch ${branch} - provenance`,
+      `built from: abap2UI5-addons/embed-ui5-control@${commitOf(root)}`,
       `control:    ${NAME}@${version} (packages/embed-control of that commit)`,
       `BSP tools:  abap2UI5/abap2UI5@${commitOf(a2)}`,
       "",
