@@ -99,8 +99,9 @@ installation has - put your class into `ext/Abap2UI5Section.js`.
 ## Run it
 
 It needs an abap2UI5 backend that answers `?z2ui5-bundle` and leaves the
-URL to the page it is embedded in - **abap2UI5 1.150.0 or later**, the
-first release whose frontend creates the app for this control.
+URL to the page it is embedded in - **abap2UI5 1.146.0 or later**. An older
+one clears the URL hash after every roundtrip, and the
+object page goes back to the list.
 
 The app's own OData service is a mockserver of the dev server - the
 metadata with the UI annotations in `webapp/localService/metadata.xml`, the
@@ -119,7 +120,7 @@ npm start                        # ui5 serve, /sap/** proxied to the system in u
 transpiled to JavaScript and run in Node, on `http://localhost:3000`. The npm
 package
 [`@abap2ui5/node-runtime`](https://www.npmjs.com/package/@abap2ui5/node-runtime)
-is exactly that, prebuilt - 1.150.0 or later, in a folder of its own, with
+is exactly that, prebuilt - 1.146.0 or later, in a folder of its own, with
 Node 22 or later:
 
 ```bash

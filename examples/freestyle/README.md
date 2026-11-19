@@ -20,8 +20,8 @@ loads it from the backend (`/sap/bc/z2ui5?z2ui5-bundle`).
 
 ## Run it
 
-It needs an abap2UI5 backend that answers `?z2ui5-bundle` - abap2UI5 1.150.0
-or later, the first release whose frontend creates the app for this control.
+It needs an abap2UI5 backend that answers `?z2ui5-bundle` - abap2UI5 1.145.0
+or later.
 
 **Against an SAP system** - `npm start`: set the system's URL as `baseUri`
 in `ui5.yaml`, copy `.env.example` to `.env` and put user and password there.

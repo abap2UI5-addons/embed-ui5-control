@@ -123,7 +123,7 @@ abapGit's file format:
 | `Z2UI5_CL_EMBED_LANGUAGES` (CLAS) | the abap2UI5 app of the second section: the country's name in every language of the system, from `T005T` |
 
 It needs a system with RAP view entities and OData V2 bindings - SAP
-S/4HANA 2020 (ABAP 7.55) or later - and abap2UI5 1.150.0 or later. `T005T`
+S/4HANA 2020 (ABAP 7.55) or later - and abap2UI5 1.146.0 or later. `T005T`
 is no released API, so the view is for standard ABAP, not ABAP Cloud; there,
 `I_CountryText` takes its place.
 
@@ -135,14 +135,15 @@ eight countries.
 ## Run it
 
 It needs an abap2UI5 backend that answers `?z2ui5-bundle` and leaves the
-URL to the page it is embedded in - **abap2UI5 1.150.0 or later**, the
-first release whose frontend creates the app for this control.
+URL to the page it is embedded in - **abap2UI5 1.146.0 or later**. An older
+one clears the URL hash after every roundtrip, and the object page goes
+back to the list.
 
 **Without an SAP system** - `npm run start-local` (`ui5-local.yaml`): abap2UI5
 transpiled to JavaScript and run in Node, on `http://localhost:3000`, the
 list report and the object page from the mock service. The npm package
 [`@abap2ui5/node-runtime`](https://www.npmjs.com/package/@abap2ui5/node-runtime)
-is that backend, prebuilt - 1.150.0 or later, in a folder of its own, with
+is that backend, prebuilt - 1.146.0 or later, in a folder of its own, with
 Node 22 or later:
 
 ```bash
@@ -182,7 +183,7 @@ objects of `abap/` in `src/01`, and this app as the BSP `Z2UI5_HOST_FE` in
 service left out, and `Z2UI5_CL_EMBED_COUNTRY` and
 `Z2UI5_CL_EMBED_LANGUAGES` as the classes it starts.
 
-1. abap2UI5 1.150.0 or later in the system, its HTTP service
+1. abap2UI5 1.146.0 or later in the system, its HTTP service
    `/sap/bc/z2ui5` active.
 2. Pull the branch `rap` with abapGit into a new package.
 3. Publish the service binding `Z2UI5_UI_EMBED_COUNTRY_O2` (ADT: open it,

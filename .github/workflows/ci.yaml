@@ -18,11 +18,12 @@ name: ci
 #           Twice: against abap2UI5 main (npm run express in a checkout), and
 #           against the backend floor the package records -
 #           "abap2ui5".minBackend in packages/embed-control/package.json,
-#           abap2UI5 1.150.0 today - the published @abap2ui5/node-runtime of
+#           abap2UI5 1.145.0 today - the published @abap2ui5/node-runtime of
 #           that version (job floor reads it, so the leg cannot drift from the
-#           package). A floor that is not published yet - the control raised
-#           it ahead of the release - skips the leg, and job floor says so.
-#           The floor leg leaves out the tests tagged @after-<floor>
+#           package). The floor leg leaves out what 1.145.0 cannot do: the
+#           Fiori elements examples and the tests tagged @after-<floor> need a
+#           frontend that leaves the URL hash to the host (the release after
+#           it)
 
 on:
   pull_request:
@@ -93,6 +94,7 @@ jobs:
         run: |
           for example in freestyle fiori-elements fiori-elements-v2 card; do
             test -f "examples/$example/dist/thirdparty/z2ui5/embed/Container.js"
+            test -f "examples/$example/dist/thirdparty/z2ui5/embed/Container.css"
             test ! -e "examples/$example/dist/resources"
           done
           test -f examples/card/dist/manifest.json
@@ -107,7 +109,6 @@ jobs:
     timeout-minutes: 5
     outputs:
       backend: ${{ steps.read.outputs.backend }}
-      published: ${{ steps.read.outputs.published }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -119,12 +120,6 @@ jobs:
           echo "$backend" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'
           echo "backend=$backend" >> "$GITHUB_OUTPUT"
           echo "the backend floor is abap2UI5 $backend"
-          if npm view "@abap2ui5/node-runtime@$backend" version 2>/dev/null | grep -q .; then
-            echo "published=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "published=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::@abap2ui5/node-runtime $backend is not published yet - the e2e leg against the floor is skipped"
-          fi
 
   bsp:
     runs-on: ubuntu-latest
@@ -151,9 +146,6 @@ jobs:
     needs: floor
     runs-on: ubuntu-latest
     timeout-minutes: 40
-    env:
-      # the floor leg, when the floor is not published yet (job floor)
-      SKIP: ${{ matrix.backend != 'main' && needs.floor.outputs.published != 'true' }}
     strategy:
       fail-fast: false
       matrix:
@@ -170,14 +162,12 @@ jobs:
               --grep-invert @after-${{ needs.floor.outputs.backend }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        if: ${{ env.SKIP != 'true' }}
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        if: ${{ env.SKIP != 'true' && matrix.backend == 'main' }}
+        if: ${{ matrix.backend == 'main' }}
         with:
           repository: abap2UI5/abap2UI5
           path: .abap2ui5
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        if: ${{ env.SKIP != 'true' }}
         with:
           node-version-file: .nvmrc
           cache: npm
@@ -186,14 +176,14 @@ jobs:
             .abap2ui5/package-lock.json
 
       - name: Build the abap2UI5 backend
-        if: ${{ env.SKIP != 'true' && matrix.backend == 'main' }}
+        if: ${{ matrix.backend == 'main' }}
         working-directory: .abap2ui5
         run: |
           npm ci
           npm run downport
           npm run auto_transpile
       - name: Install the published abap2UI5 ${{ matrix.backend }}
-        if: ${{ env.SKIP != 'true' && matrix.backend != 'main' }}
+        if: ${{ matrix.backend != 'main' }}
         run: |
           mkdir .abap2ui5 && cd .abap2ui5
           # a manifest of its own: `npm init -y` names the package after the
@@ -206,7 +196,6 @@ jobs:
           await serve({ port: 3000, host: "127.0.0.1" });
           JS
       - name: Start it on port 3000
-        if: ${{ env.SKIP != 'true' }}
         working-directory: .abap2ui5
         run: |
           if [ "${{ matrix.backend }}" = main ]; then
@@ -222,11 +211,8 @@ jobs:
           exit 1
 
       - run: npm ci
-        if: ${{ env.SKIP != 'true' }}
       - run: npx playwright install --with-deps chromium
-        if: ${{ env.SKIP != 'true' }}
       - run: npx playwright test ${{ matrix.playwright-args }}
-        if: ${{ env.SKIP != 'true' }}
         env:
           CI: "true"
       - if: ${{ failure() }}
