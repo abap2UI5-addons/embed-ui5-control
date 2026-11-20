@@ -155,8 +155,9 @@ hello world app, which every abap2UI5 installation has; an app of your own
 names two classes of its own.
 
 A Fiori elements app routes by the URL hash, so the abap2UI5 behind it has
-to leave the hash to the page it is embedded in - every abap2UI5 the
-control starts on does (1.150.0 or later, see "Install the BSP").
+to leave the hash to the page it is embedded in: **abap2UI5 1.146.0 or
+later** does. An older one clears the hash after every
+roundtrip, and the object page goes back to the list.
 
 ## In a Fiori elements app for OData V2: an object page extension
 
@@ -245,7 +246,8 @@ control in
 
 The further parameters reach the ABAP class as startup parameters,
 `client->get( )-t_comp_params` - one class, configured per card. Work Zone
-routes by the URL hash as well, which the embedded app leaves alone.
+routes by the URL hash as well, so the card needs the same abap2UI5 as the
+Fiori elements app: 1.146.0 or later.
 [`card/README.md`](https://github.com/abap2UI5-addons/embed-ui5-control/blob/standard/card/README.md)
 lists the parameters and the way into Work Zone, and what to check on the
 first card.
@@ -280,7 +282,7 @@ apps use, and `sap.ui.codeeditor` for abap2UI5's developer tools
 script load error; an app deployed to a system has every library of that
 system.
 
-Every example needs abap2UI5 1.150.0 or later. The
+The Fiori elements apps and the card need abap2UI5 1.146.0 or later. The
 READMEs of
 [`freestyle/`](https://github.com/abap2UI5-addons/embed-ui5-control/blob/standard/freestyle/README.md),
 [`fiori-elements/`](https://github.com/abap2UI5-addons/embed-ui5-control/blob/standard/fiori-elements/README.md),
@@ -295,10 +297,10 @@ Work Zone. `npm run build` writes an app - or the card - to deploy into
 
 ## Install the BSP
 
-1. [abap2UI5](https://github.com/abap2UI5/abap2UI5) **1.150.0 or later** -
-   the release after 1.149.0, whose frontend creates the app for the
-   control (`@abap2ui5/embed-control` 0.4.0) - with its HTTP service
-   `/sap/bc/z2ui5` active; it is part of abap2UI5's own pull.
+1. [abap2UI5](https://github.com/abap2UI5/abap2UI5) **1.145.0 or later**,
+   with its HTTP service `/sap/bc/z2ui5` active - the node the `standard`
+   branch of [abap2UI5/frontend](https://github.com/abap2UI5/frontend)
+   brings, for example.
 2. Pull the branch `standard` of this repository with abapGit into a new
    package. It creates the BSP `Z2UI5_HOST` with the ICF nodes
    `/sap/bc/ui5_ui5/sap/z2ui5_host` and `/sap/bc/bsp/sap/z2ui5_host` -
@@ -310,11 +312,11 @@ Work Zone. `npm run build` writes an app - or the card - to deploy into
 4. Open `/sap/bc/ui5_ui5/sap/z2ui5_host/index.html`.
 
 What to look for: three hello world apps. In the browser's network tab,
-`thirdparty/z2ui5/embed/Container.js` of the BSP, one
+`thirdparty/z2ui5/embed/Container.js` and `.css` of the BSP, one
 `GET /sap/bc/z2ui5?z2ui5-bundle` and no other file of the frontend; every
-`POST` goes to `/sap/bc/z2ui5`. An older abap2UI5 answers the bundle
-request with its page, or with a bundle the control cannot start - the
-control then says so ("no abap2UI5 frontend at ...") instead of starting.
+`POST` goes to `/sap/bc/z2ui5`. An abap2UI5 older than 1.145.0 answers the
+bundle request with its page - the control then says so ("abap2UI5 could not
+start") instead of starting.
 
 ```
 BSP Z2UI5_HOST                             the host app
@@ -337,7 +339,7 @@ RAP view entities and OData V2 bindings - SAP S/4HANA 2020 (ABAP 7.55) or
 later, standard ABAP (the view reads `T005T`, which ABAP Cloud does not
 release).
 
-1. abap2UI5 **1.150.0 or later**, with its HTTP service `/sap/bc/z2ui5`
+1. abap2UI5 **1.146.0 or later**, with its HTTP service `/sap/bc/z2ui5`
    active.
 2. Pull the branch `rap` of this repository with abapGit into a new package.
    It creates the RAP service, `Z2UI5_CL_EMBED_COUNTRY` and
@@ -373,9 +375,11 @@ BSP Z2UI5_HOST_FE                                  the Fiori elements app
 
 - One frontend per page: the first control that starts decides where it
   comes from; every control still sends its roundtrips to its own endpoint.
-- The busy indicator, the title, the favicon and the URL hash are the
-  host's - unless the control owns the page (`ownsPage`)
-  ([backlog item](https://github.com/abap2UI5/abap2UI5/blob/main/backlog/items/embed-as-reuse-component.md)).
+- Embedding is still page-wide in places up to abap2UI5 1.146.0 - busy
+  indicator, title, the full-screen `sap.m.App` root; 1.147.0 leaves them
+  to the host, with a `sap.m.NavContainer` as the root
+  ([backlog item](https://github.com/abap2UI5/abap2UI5/blob/main/backlog/items/embed-as-reuse-component.md));
+  the URL hash is the host's from abap2UI5 1.146.0 on.
 - Custom controls from `Z2UI5_CCI`/`Z2UI5_CCC`: the bundle hands over their
   paths like abap2UI5's own page does; not tried yet.
 - The card is tried against a stand-in for Work Zone, not yet on a Work Zone

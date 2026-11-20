@@ -1,6 +1,6 @@
 {
   "name": "@abap2ui5/embed-control",
-  "version": "0.4.0",
+  "version": "0.3.0",
   "description": "Embed abap2UI5 apps in any UI5 app: a UI5 control that runs an ABAP class implementing z2ui5_if_app",
   "keywords": [
     "ui5",
@@ -32,6 +32,6 @@
     "access": "public"
   },
   "abap2ui5": {
-    "minBackend": "1.150.0"
+    "minBackend": "1.145.0"
   }
 }

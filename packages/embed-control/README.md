@@ -67,11 +67,11 @@ sap.ui.require(["z2ui5/embed/Container"], (Container) => {
 
 | Property | Type | Default | |
 |---|---|---|---|
-| `app` | string | | The ABAP class to run. Nothing starts while it is empty - unless `ownsPage` is set: then the page's URL names the class (`?app_start=`, or a route in the hash), and without one the backend starts its start page (0.4.0) |
+| `app` | string | | The ABAP class to run. Nothing starts while it is empty |
 | `endpoint` | string | `/sap/bc/z2ui5` | Path of the abap2UI5 HTTP service on this server - absolute, or relative to the page's address (a `<base>` does not apply), without a query or a fragment. The frontend is loaded from it, the roundtrips go to it. See [Backend](#backend) |
 | `params` | object | | `{ name: "value" }`, read by the app with `client->get( )-t_comp_params`; `{ name: ["a", "b"] }` hands several values over under one name. A value that is `null` or `undefined` is left out; an object is handed over as JSON text |
-| `ownsPage` | boolean | `false` | Hands the page to the app - for a page that is this control and nothing else: the app then has what it has on a page of its own - the URL hash (hash routing, `set_push_state`, `hash_replace`, browser Back and Forward between routed apps, a route restored on reload), the document title and the favicon, the global busy indicator during a roundtrip, the browser's "leave page?" prompt for unsaved changes - and `app` may stay empty: the page's URL names the class. Off, they are your app's: the embedded app leaves the title, the favicon and the hash alone, is busy on its own area and raises no prompt. Leave it off when your page has more than the control - a Fiori elements object page. One such control per page. A change starts the app anew, like one of `app`, `endpoint` or `params` |
-| `bundleVersion` | string | | The version of the frontend bundle, when the host knows it: the bundle is then asked for as `?z2ui5-bundle=<version>`, and a backend that serves this version lets the browser keep it without asking again. abap2UI5's own page sets it. Empty, the browser revalidates the bundle on every page load |
+| `ownsPage` | boolean | `false` | Hands the page to the app - for a page that is this control and nothing else: the app then has what it has on a page of its own - the URL hash (hash routing, `set_push_state`, `hash_replace`, browser Back and Forward between routed apps, a route restored on reload), the document title and the favicon, the global busy indicator during a roundtrip, the browser's "leave page?" prompt for unsaved changes. Off, they are your app's: the embedded app leaves the title, the favicon and the hash alone, is busy on its own area and raises no prompt. Leave it off when your page has more than the control - a Fiori elements object page. One such control per page. A change starts the app anew, like one of `app`, `endpoint` or `params`. Needs abap2UI5 1.147.0, which reads it (the control passes `ownsHash` with it); an older one ignores it |
+| `ownsHash` | boolean | `false` | The older, narrower name of `ownsPage`: hands the page's URL hash to the app - for a page that is this control and nothing else, which routes by nothing: the app then routes as on a page of its own (hash routing, `set_push_state`, `hash_replace`, browser Back and Forward between routed apps, a route restored on reload). Leave it off when your app routes by the hash - a Fiori elements object page does. One such control per page. A change starts the app anew, like one of `app`, `endpoint` or `params`. Needs abap2UI5 1.147.0, which hands the whole page over for it, as for `ownsPage`; an older one ignores it |
 | `width` | CSSSize | `100%` | |
 | `height` | CSSSize | `100%` | The app fills its container - give it a height, or a parent that has one. A change of `width` or `height` resizes the area in place; the running app is not re-rendered |
 
@@ -126,26 +126,42 @@ walks through the places the package is wired in.
 
 The app runs on an ABAP system with
 [abap2UI5 installed](https://abap2ui5.github.io/docs/configuration/installation.html)
-and its HTTP service (by default `/sap/bc/z2ui5`) active:
+and its HTTP service (by default `/sap/bc/z2ui5`) active. The control needs
+**abap2UI5 1.145.0 or later**, whose service answers `?z2ui5-bundle` - in
+Node that is `@abap2ui5/node-runtime` 1.145.0, in CAP
+`@cap2ui5/cds-plugin` 0.3.1, which runs on it:
 
 ```
 GET  /sap/bc/z2ui5?z2ui5-bundle   the frontend as one script - loaded once per page
 POST /sap/bc/z2ui5                the roundtrips, one session per control
-GET  /sap/bc/z2ui5                abap2UI5's own page - this control, in a minimal app
+GET  /sap/bc/z2ui5                abap2UI5's own page, unchanged
 ```
 
-**From 0.4.0 on the control is a shell**: it loads the bundle and renders
-what the bundle's `z2ui5/embed` module creates (`create( )`). How an app is
-created - its component, its component data, its styles - comes from the
-backend, so it always fits the backend it came from. That needs **the
-abap2UI5 release after 1.149.0**, whose bundle has `create( )`; against an
-older abap2UI5 the control fires `componentFailed` ("no abap2UI5 frontend
-at ...") instead of starting, and there is no fallback. For abap2UI5 1.145.0
-to 1.149.0 stay on `@abap2ui5/embed-control` 0.3.0, which keeps working
-against newer backends too. The package records the floor in its
-`package.json` (`abap2ui5.minBackend`). Every release is tested against
-abap2UI5's main and against that floor (`@abap2ui5/node-runtime` of the same
-version).
+An older abap2UI5 answers with its page; the control then fires
+`componentFailed` ("no abap2UI5 frontend at ...") instead of starting.
+
+**What 1.145.0 does not do yet.** abap2UI5 1.146.0 fixes all of these; with
+1.145.0 itself plan for them:
+
+- **The URL hash is the frontend's.** 1.145.0 clears the host's hash with the
+  first roundtrip and after every one: a Fiori elements object page goes back
+  to its list, SAP Build Work Zone leaves the page a card sits on. And a
+  host hash shaped like abap2UI5's own deep link, `#/app/<CLASS>`, wins over
+  the `app` property - that class starts instead. A host that routes by the
+  hash - a Fiori elements app, an app with a UI5 router, SAP Build Work
+  Zone - needs 1.146.0 or later, whose frontend knows it is
+  embedded and leaves the hash to your app (abap2UI5 677e71b, #2808).
+- **No CSRF token handshake.** An SAP approuter route checks CSRF tokens by
+  default (`cds add approuter` generates such a route), and 1.145.0 sends
+  none - every roundtrip is refused with 403 "X-CSRF-Token: Required". Give
+  the route to the service `"csrfProtection": false`; abap2UI5's own origin
+  check stays in place. 1.146.0 fetches the token on that
+  403 (abap2UI5 #2802).
+
+Every release is tested against abap2UI5's main and against 1.145.0
+(`@abap2ui5/node-runtime` 1.145.0) - there without what needs the hash. The
+package records the floor in its `package.json` (`abap2ui5.minBackend`), and
+that is the version the test installs.
 
 **The page and the service have to share an origin.** abap2UI5 rejects a
 POST whose `Origin` names another host than its own (its CSRF defense), and
@@ -219,7 +235,7 @@ specVersion 3.0, and every release is built with both.
   requested under, and the frontend puts the prefix of the control's
   `endpoint` in front of the roots. Nothing in the control changes with it.
 - abap2UI5 was built to own the whole page. Its embedded mode leaves the
-  URL to your app - unless `ownsPage` hands the page
+  URL to your app (from 1.146.0 on) - unless `ownsHash` hands the hash
   back (from 1.147.0 on) - and, from 1.147.0 on as well, the document
   title, the favicon, the busy indicator and the "leave page?" prompt as
   well, unless `ownsPage` hands the page back; before that an embedded app
@@ -251,6 +267,7 @@ specVersion 3.0, and every release is built with both.
 | Path | |
 |---|---|
 | `src/Container.js` | The control, `z2ui5.embed.Container` |
+| `src/Container.css` | Its stylesheet, loaded by the control |
 | `ui5.yaml` | Serves `src/` under `/thirdparty/z2ui5/embed/` |
 | `CHANGELOG.md` | Every release |
 

@@ -107,14 +107,14 @@ hand. A branch carries the control of the `main` it was built from; its
 | `npm run consumer:check` | the packed package, installed into an app of its own and built with UI5 CLI 3 and 4 |
 | `npm run abaplint` | the ABAP of `examples/fiori-elements-v2/abap` against abap2UI5's main (`abaplint.jsonc`) |
 | `npm run build` | `ui5 build` of the examples - the control lands in `dist/thirdparty/z2ui5/embed/` |
-| `ABAP2UI5_DIR=../abap2UI5 npm run bsp` | the branches in `out/standard/` and `out/rap/`, built and checked with `@abap2ui5/bsp` (`tools/bsp` of that checkout) |
+| `ABAP2UI5_DIR=../abap2UI5 npm run bsp` | the branches in `out/standard/` and `out/rap/`, built with abap2UI5's BSP tools and checked with its page invariants |
 | `npm run backend` | abap2UI5 in Node on port 3000 (`scripts/backend.mjs`), for the e2e tests or an example started with its own `npm run start-local` |
 | `npx playwright test` | the examples in a browser against the backend on port 3000 - the freestyle one on UI5 1.136 and 1.71, the Fiori elements ones on SAPUI5 1.136, the card on OpenUI5 1.136 (`PW_CHROMIUM_PATH` for an installed Chromium) |
 
 CI (`.github/workflows/ci.yaml`) runs all of them on every pull request -
 the e2e tests against an abap2UI5 backend built from
-abap2UI5's default branch, and against the backend floor the package
-records (1.150.0 - skipped until that release is published). So it tests what a user gets: this control, these examples
+abap2UI5's default branch, and against 1.145.0, the backend floor the
+package records. So it tests what a user gets: this control, these examples
 and the current abap2UI5. Because abap2UI5 moves on without a pull request
 here, CI also runs every night.
 
@@ -175,10 +175,13 @@ Then:
 
 What is still open is tracked in abap2UI5 as the
 [embed-as-reuse-component](https://github.com/abap2UI5/abap2UI5/blob/main/backlog/items/embed-as-reuse-component.md)
-backlog item. Since 0.4.0 the control is a shell: how an app is created - its
-component, its component data, its styles - comes from the backend's bundle,
-so a change there needs no new version of the control. abap2UI5's own page
-and its BSP run this control too.
+backlog item: an embedded mode of the frontend that leaves page-wide things
+to the host app. The first part is there - the bundle marks the component
+embedded, and it leaves the URL hash alone (abap2UI5 1.146.0), which
+is what the Fiori elements examples need. From 1.147.0 on the frontend leaves
+the busy indicator, the title, the favicon and the "leave page?" prompt to
+the host as well, and its root is a `sap.m.NavContainer` instead of the
+full-screen `sap.m.App`; nothing in the control had to change for it.
 
 ## Issues
 
