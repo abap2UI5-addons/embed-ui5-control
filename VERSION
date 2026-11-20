@@ -1,0 +1,4 @@
+Generated abap2UI5-addons/embed-ui5-control branch rap - provenance
+built from: abap2UI5-addons/embed-ui5-control@0017bcbc7902228cb342a5a7e7a24c1eeaeb26d1
+control:    @abap2ui5/embed-control@0.3.0 (packages/embed-control of that commit)
+BSP tools:  abap2UI5/abap2UI5@590e60916436cefdb1fe80721a047343dd1eddd0
