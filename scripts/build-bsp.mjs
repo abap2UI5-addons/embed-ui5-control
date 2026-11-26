@@ -54,12 +54,18 @@
 // clones a branch and runs npm install gets the package from the registry,
 // by the same range.
 //
-// The BSPs are made by abap2UI5's own tools, the ones that build its frontend
-// BSP for abap2UI5/frontend, taken from the checkout ABAP2UI5_DIR names:
-//   tools/app2bsp          webapp -> BSP pages (lines a page can carry, the
-//                          page directory, the ui5_ui5 and bsp nodes)
-//   tools/bsp_rename       Z2UI5 -> Z2UI5_HOST (BSP, nodes, file names)
-//   tools/check-pages.mjs  the page invariants, on the result
+// The BSPs are made by abap2UI5's own BSP tool, @abap2ui5/bsp - the one that
+// builds the BSP of its own frontend - taken from the checkout ABAP2UI5_DIR
+// names (tools/bsp, in abap2UI5 since 1.149.0):
+//   app2bsp         webapp -> the BSP under its own name: the pages, the page
+//                   directory, the path mapping, the ui5_ui5 and bsp nodes,
+//                   the package's text
+//   checkBspFolder  the page invariants, on the result
+// Until abap2UI5 1.151.0 this build ran tools/app2bsp/run.js, which writes the
+// BSP Z2UI5, renamed it with tools/bsp_rename and checked it with
+// tools/check-pages.mjs. 1.151.0 removed check-pages.mjs and gave bsp_rename
+// a limit of 11 characters for the name (it derives an ICF handler class
+// from it, which a BSP of an app does not have) - Z2UI5_HOST_FE has 13.
 
 import { execFileSync } from "node:child_process";
 import {
@@ -75,7 +81,7 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, relative, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const outRoot = join(root, "out");
@@ -168,25 +174,24 @@ const BRANCHES = {
 
 const NAME = "@abap2ui5/embed-control";
 
-// The real path: bsp_rename runs only as the main module, which it decides by
-// comparing its own path with argv[1] - called through a symlink, the two
-// differ and the tool does nothing, without a word.
-const a2dir = process.env.ABAP2UI5_DIR && resolve(process.env.ABAP2UI5_DIR);
-const a2 = a2dir && existsSync(a2dir) ? realpathSync(a2dir) : a2dir;
-const TOOLS = [
-  "tools/app2bsp/run.js",
-  "tools/bsp_rename/rename-bsp.mjs",
-  "tools/check-pages.mjs",
-];
+const a2 = process.env.ABAP2UI5_DIR && resolve(process.env.ABAP2UI5_DIR);
+const BSP_TOOL = "tools/bsp/index.mjs";
 if (process.argv.length > 2) {
   console.error("build-bsp: takes no options");
   process.exit(1);
 }
-if (!a2 || TOOLS.some((tool) => !existsSync(join(a2, tool)))) {
+if (!a2 || !existsSync(join(a2, BSP_TOOL))) {
   console.error(
-    "build-bsp: set ABAP2UI5_DIR to an abap2UI5 checkout with " +
-      TOOLS.join(", "),
+    `build-bsp: set ABAP2UI5_DIR to an abap2UI5 checkout with ${BSP_TOOL} ` +
+      "(abap2UI5 1.149.0 or later)",
   );
+  process.exit(1);
+}
+const { app2bsp, checkBspFolder } = await import(
+  pathToFileURL(join(a2, BSP_TOOL)).href
+);
+if (typeof app2bsp !== "function" || typeof checkBspFolder !== "function") {
+  console.error(`build-bsp: ${BSP_TOOL} exports no app2bsp or checkBspFolder`);
   process.exit(1);
 }
 
@@ -246,7 +251,6 @@ function run(command, commandArgs, cwd) {
     throw error;
   }
 }
-const node = (nodeArgs, cwd) => run(process.execPath, nodeArgs, cwd);
 
 // An example as git has it - so never a local .env, node_modules or dist/ -
 // without what only the tests use
@@ -322,15 +326,8 @@ function commitOf(dir) {
 }
 
 // One BSP: the example's webapp plus the control, through app2bsp, into
-// tree/src/02, renamed to the BSP's own name. In a folder of its own under
-// work/, because app2bsp writes to a fixed place relative to its cwd.
+// tree/src/02 under the BSP's own name - its nodes and its texts with it.
 function buildBsp(tree, work, control, bsp) {
-  const dir = join(work, `bsp-${bsp.name}`);
-  // app2bsp's working-directory contract: .github/app2bsp next to
-  // frontend/app/webapp, output in src/02
-  cpSync(join(a2, "tools", "app2bsp"), join(dir, ".github", "app2bsp"), {
-    recursive: true,
-  });
   const source = join(work, "examples", bsp.example, "webapp");
   const left = (bsp.leaveOut || []).map((path) => join(source, path));
   for (const path of left) {
@@ -340,7 +337,7 @@ function buildBsp(tree, work, control, bsp) {
       );
     }
   }
-  const webapp = join(dir, "frontend", "app", "webapp");
+  const webapp = join(work, `bsp-${bsp.name}`, "webapp");
   cpSync(source, webapp, {
     recursive: true,
     filter: (path) => !left.some((l) => path === l || path.startsWith(l + "/")),
@@ -349,58 +346,47 @@ function buildBsp(tree, work, control, bsp) {
     mustReplace(join(webapp, file), from, to);
   }
   cpSync(join(control, "src"), join(webapp, THIRDPARTY), { recursive: true });
-  node([join(".github", "app2bsp", "run.js")], dir);
 
   const src02 = join(tree, "src", "02");
-  mkdirSync(dirname(src02), { recursive: true });
-  cpSync(join(dir, "src", "02"), src02, { recursive: true });
+  app2bsp({
+    webapp,
+    target: src02,
+    name: bsp.name,
+    text: bsp.wapa,
+    icfText: bsp.icf,
+    packageText: bsp.devc,
+  });
 
-  // The texts an installer sees next to the objects, before the rename, which
-  // leaves them alone: they say "abap2UI5 frontend", and this is not it.
-  mustReplace(
-    join(src02, "z2ui5.wapa.xml"),
-    "<TEXT>abap2UI5 frontend (generated)</TEXT>",
-    `<TEXT>${bsp.wapa}</TEXT>`,
-  );
-  mustReplace(
-    join(src02, "package.devc.xml"),
-    "<CTEXT>abap2UI5</CTEXT>",
-    `<CTEXT>${bsp.devc}</CTEXT>`,
-  );
-
-  node(
-    [
-      join(a2, "tools", "bsp_rename", "rename-bsp.mjs"),
-      bsp.name,
-      "--yes",
-      "--dir",
-      join("src", "02"),
-    ],
-    tree,
-  );
-
-  // bsp_rename renames every z2ui5 token of the page directory, the z2ui5
-  // segment of the pages' own paths included, and leaves the page files and
-  // their content alone - so the directory would list pages under
-  // thirdparty/<name>/ that the files and the manifest place under
-  // thirdparty/z2ui5/. Put the paths back (abap2UI5's own BSP has no page
-  // with z2ui5 in its path, so the tool never met one).
+  // The control is registered under the path the manifest names, the two
+  // nodes are the BSP's own, and the texts are ours
   const pages = join(src02, `${bsp.name}.wapa.xml`);
-  const renamed = THIRDPARTY.replace("z2ui5", bsp.name);
-  mustReplace(pages, renamed, THIRDPARTY);
-  mustReplace(pages, renamed.toUpperCase(), THIRDPARTY.toUpperCase());
-
-  // the description SICF shows for the two nodes, which the rename leaves
-  // alone as well
+  mustContain(pages, `<APPLNAME>${bsp.name.toUpperCase()}</APPLNAME>`);
+  mustContain(pages, `<PAGENAME>${THIRDPARTY}Container.js</PAGENAME>`);
+  mustContain(pages, `<TEXT>${bsp.wapa}</TEXT>`);
+  mustContain(join(src02, "package.devc.xml"), `<CTEXT>${bsp.devc}</CTEXT>`);
   const nodes = readdirSync(src02).filter((f) => f.endsWith(".sicf.xml"));
   if (nodes.length !== 2) {
     throw new Error(`build-bsp: 2 ICF nodes expected, found ${nodes.length}`);
   }
   for (const file of nodes) {
-    mustReplace(
-      join(src02, file),
-      "<ICF_DOCU>abap2UI5 - Frontend</ICF_DOCU>",
-      `<ICF_DOCU>${bsp.icf}</ICF_DOCU>`,
+    mustContain(join(src02, file), `/sap/${bsp.name}/</URL>`);
+    mustContain(join(src02, file), `<ICF_DOCU>${bsp.icf}</ICF_DOCU>`);
+  }
+}
+
+// The page invariants of abap2UI5's tools, on the BSP of a finished tree:
+// page names the system accepts, no line over 255 characters, every page
+// file registered, every .js page valid JavaScript as stored - and exactly
+// one BSP, in src/02.
+function checkPages(tree, branch) {
+  const { problems, pages, bsps } = checkBspFolder(join(tree, "src", "02"));
+  if (bsps !== 1 || !pages) {
+    problems.push(`${bsps} BSP with ${pages} pages in src/02, expected 1`);
+  }
+  if (problems.length) {
+    throw new Error(
+      `build-bsp: ${branch}: ${problems.length} page problem(s)\n  ` +
+        problems.join("\n  "),
     );
   }
 }
@@ -428,11 +414,6 @@ try {
       "",
     ].join("\n");
 
-  // check-pages reads its trees from the out/ next to itself
-  const checker = join(work, "check", "tools");
-  mkdirSync(checker, { recursive: true });
-  cpSync(join(a2, "tools", "check-pages.mjs"), join(checker, "check.mjs"));
-
   // The README every branch carries: the one of the examples, with a first
   // line that says where the branch comes from.
   const readme =
@@ -457,10 +438,7 @@ try {
     writeFileSync(join(tree, ".abapgit.xml"), abapgitXml(def.abapgit));
     writeFileSync(join(tree, "src", "package.devc.xml"), packageXml(def.devc));
 
-    cpSync(join(tree, "src"), join(checker, "out", branch, "src"), {
-      recursive: true,
-    });
-    node([join(checker, "check.mjs"), branch], work);
+    checkPages(tree, branch);
 
     writeFileSync(join(tree, "README.md"), readme);
     cpSync(join(root, "LICENSE"), join(tree, "LICENSE"));

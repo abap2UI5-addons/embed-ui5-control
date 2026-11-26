@@ -258,7 +258,7 @@ of `main`.
 - **No frontend in the trees.** A branch is the example apps, their ABAP and
   the control of `packages/embed-control`, nothing else.
 - **A branch is one abapGit repository with its BSP in `src/02`** - where
-  abap2UI5's `check-pages` looks for it - and an identity of its own: BSP
+  `build-bsp.mjs` checks it with abap2UI5's page rules - and an identity of its own: BSP
   name and ICF nodes (`BRANCHES` in `build-bsp.mjs`), so every branch
   installs next to the other and next to abap2UI5/frontend. A new branch
   goes into `BRANCHES` and into the loop of `deliver.yaml`.
@@ -281,9 +281,16 @@ of `main`.
   package's three places in `freestyle/` and where each example places the
   control, linked on the branch; the build fails when one of them no longer
   has what the README shows (`SHOWN`).
+- **The BSPs are made by abap2UI5's `@abap2ui5/bsp`** (`tools/bsp` of the
+  checkout `ABAP2UI5_DIR` names, abap2UI5 1.149.0 or later): its `app2bsp`
+  writes each BSP under its own name, nodes and texts, its `checkBspFolder`
+  checks the page rules on the result. Not `tools/app2bsp/run.js` and
+  `tools/bsp_rename` - they make abap2UI5's own BSP `Z2UI5`, and since
+  1.151.0 bsp_rename refuses a name longer than 11 characters.
 - **The guards in `build-bsp.mjs` are assumptions about abap2UI5's tools**
-  (the short texts they write, the page paths bsp_rename touches). One that
-  fails means the tools moved: follow them, do not loosen the guard.
+  (what `app2bsp` writes: the BSP name, the control's page paths, the texts,
+  the two ICF nodes). One that fails means the tools moved: follow them, do
+  not loosen the guard.
 
 ## Rules for the examples' ABAP
 
