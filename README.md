@@ -97,7 +97,7 @@ abap2UI5's BSP tools, and `deliver.yaml` writes each as one commit on top of
 hand. A branch carries the control of the `main` it was built from; its
 `VERSION` file names the commit and the version.
 
-## Checks
+## Development
 
 | Command | |
 |---|---|
@@ -183,9 +183,10 @@ the busy indicator, the title, the favicon and the "leave page?" prompt to
 the host as well, and its root is a `sap.m.NavContainer` instead of the
 full-screen `sap.m.App`; nothing in the control had to change for it.
 
-## Issues
+## Contributing
 
-For bug reports or feature requests, open an issue here (the control, the
+Pull requests against `main` are welcome - see [CONTRIBUTING.md](CONTRIBUTING.md)
+for where a change goes and what to run before you push. For bug reports or feature requests, open an issue here (the control, the
 examples) or in
 [abap2UI5/abap2UI5](https://github.com/abap2UI5/abap2UI5/issues) (the
 frontend, the backend).
