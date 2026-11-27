@@ -1,0 +1,4 @@
+Generated abap2UI5-addons/embed-ui5-control branch standard - provenance
+built from: abap2UI5-addons/embed-ui5-control@c0a5cc9ddf109c288db134bcfde00a987e3dd302
+control:    @abap2ui5/embed-control@0.3.0 (packages/embed-control of that commit)
+BSP tools:  abap2UI5/abap2UI5@910f732d15b64ef8648610616a41f9cdf60ea910
