@@ -36,13 +36,13 @@
   },
   "devDependencies": {
     "@abap2ui5/node-runtime": "^1.148.0",
-    "@abaplint/cli": "^2.120.99",
+    "@abaplint/cli": "^2.120.118",
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.65.0",
-    "@ui5/cli": "^4.0.73",
+    "@ui5/cli": "^4.1.0",
     "eslint": "^10.14.0",
     "express": "^5.3.0",
     "globals": "^17.14.0",
-    "prettier": "^3.9.10"
+    "prettier": "^3.10.1"
   }
 }
